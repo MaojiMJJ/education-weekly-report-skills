@@ -1,0 +1,4 @@
+interface:
+  display_name: "Education Industry Observation"
+  short_description: "Generate China non-vocational education industry observation decks"
+  default_prompt: "Use $education-industry-observation to generate an education industry observation deck from current sources."

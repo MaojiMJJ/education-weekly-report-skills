@@ -1,0 +1,4 @@
+interface:
+  display_name: "Vocational Education Weekly"
+  short_description: "Generate China vocational-education industry weekly decks"
+  default_prompt: "Use $vocational-education-weekly-report to generate a vocational education industry weekly deck from current sources."
