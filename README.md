@@ -1,35 +1,34 @@
-# Education Weekly Report Skills
+# 教育行业双周报 Skill 仓库
 
-This repository mirrors two local Codex skills for producing China education-sector biweekly reports.
+本仓库用于镜像两个本地 Codex Skill，目标是生成符合既有样例和 Word 要求的教育行业双周报。
 
-## Skills
+## Skill 清单
 
 - `skills/vocational-education-weekly-report`
-  - Intended output: `职教行业周报`
-  - Scope: vocational education policy, vocational colleges, school-enterprise industrial colleges, listed-company vocational-education events, and non-listed vocational-education company events.
+  - 生成《职教行业周报》
+  - 覆盖职业教育政策、职业院校动态、校企合作产业学院、职教上市公司事项、职教非上市企业事项。
 
 - `skills/education-industry-observation`
-  - Intended output: `教育行业观察`
-  - Scope: non-vocational education, including K12 schools, K12 training, education informatization, higher education, international education, quality education, listed-company events, AI + education financing/events, and policy.
+  - 生成《教育行业观察》
+  - 覆盖职业教育以外的教育行业，包括 K12 学校、K12 培训、教育信息化、高等教育、国际教育、素质教育、AI+教育、上市公司事项、融资交易和政策。
 
-## Current Diagnostic Context
+## 当前诊断背景
 
-The first generated public-source report did not meet the user's quality bar. The current hypothesis is that the skills are under-specified or too weak in these areas:
+第一次公开来源版报告没有达到要求，主要问题不是 PPTX 生成脚本，而是 Skill 和执行流程的约束不够硬：
 
-- source discovery strategy and search depth
-- reliable public-source retrieval for Chinese education industry media
-- handling cases where user prohibits using mailbox material
-- minimum item count and item selection criteria
-- report-style fidelity versus the downloaded sample PDFs
-- quality gate before PPTX generation
+- 没有强制逐个跑完指定信息源。
+- 没有设置最低事项数量和不足时的停止规则。
+- 没有区分“邮箱材料可用”和“只能用公开来源”两种流程。
+- 没有把检索底稿、候选池、剔除理由作为生成前质量门槛。
+- PPT 生成前没有要求先确认事项池质量。
 
-This repository is the baseline for debugging and improving the two skills step by step.
+后续改动应先修复 Skill 的检索、筛选和质量门槛，再优化 PPT 样式。
 
-## Local Runtime Paths
+## 本地路径
 
-The live local Codex skills were installed at:
+- GitHub 镜像：`D:\0GitHub\education-weekly-report-skills`
+- 本地运行时 Skill：
+  - `C:\Users\maoji\.codex\skills\vocational-education-weekly-report`
+  - `C:\Users\maoji\.codex\skills\education-industry-observation`
 
-- `C:\Users\maoji\.codex\skills\vocational-education-weekly-report`
-- `C:\Users\maoji\.codex\skills\education-industry-observation`
-
-When this repository changes, sync the relevant skill directories back to the local runtime before relying on them in Codex.
+修改本仓库后，需要同步回本地运行时目录，并重新运行 `quick_validate.py`。

@@ -1,4 +1,4 @@
 interface:
-  display_name: "Education Industry Observation"
-  short_description: "Generate China non-vocational education industry observation decks"
-  default_prompt: "Use $education-industry-observation to generate an education industry observation deck from current sources."
+  display_name: "教育行业观察"
+  short_description: "生成中国非职教教育行业双周报 PPT 和来源清单"
+  default_prompt: "Use $education-industry-observation 生成指定日期区间的教育行业观察，并附来源清单。"

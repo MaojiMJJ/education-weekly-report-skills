@@ -1,63 +1,70 @@
 ---
 name: vocational-education-weekly-report
-description: Generate China vocational education industry weekly reports as PPT-style decks or slide-ready outlines. Use when the user asks for 职业教育行业周报, 职教行业周报, vocational-education weekly scans, vocational college policy/company/financing updates, school-enterprise industrial college updates, or a two-week vocational education industry report based on current sources and prior sample PDFs.
+description: "生成中国职业教育行业双周报或周报的 PPT、逐页稿和来源清单。适用于用户要求制作职教行业周报、职业教育行业周报、职业院校政策和动态扫描、校企合作产业学院梳理、职业本科和职教上市公司事项跟踪、指定日期区间内的职业教育双周报告。"
 ---
 
-# Vocational Education Weekly Report
+# 职教行业周报
 
-## Core Contract
+## 核心任务
 
-Produce a biweekly vocational education industry report in PPT form: one cover slide plus one event per content slide. Each content slide must have a clear title and concise body bullets. Use the sample PDFs only as style and structure references; use current source verification for new reports.
+生成《职教行业周报》。默认交付为 PPT：封面 1 页，正文每页 1 个事项，每页包含分类、标题、正文要点和来源。写作语言为中文。
 
-Before drafting, read:
+除非用户明确允许，不使用邮箱、邮箱附件、内部转发正文或未公开材料作为事实来源。若用户要求只能用公开来源，只能使用公开网页、公告、政府文件、学校官网、企业官网和可访问媒体文章。
 
-- `references/report-requirements.md` for scope, item taxonomy, and required fields.
-- `references/source-workflow.md` for source hierarchy, search procedure, and verification gates.
-- `references/listed-companies.md` when screening listed-company events.
-- `references/sample-patterns.md` for observed slide structure from the downloaded PDFs.
+## 必读文件
 
-## Workflow
+开始前按任务需要读取：
 
-1. Confirm or infer the report period. Default to the latest completed two-week window if the user does not specify dates.
-2. Collect candidate events from the source workflow. Search both broad vocational education terms and specific listed-company / policy / college terms.
-3. Classify every candidate into one of: policy, vocational college, school-enterprise industrial college, listed company, unlisted company / financing, or other vocational education.
-4. Keep only material events with enough facts to explain what happened, who is involved, and why it matters.
-5. Enrich each kept item with the required fields in `report-requirements.md`; if a material field is not disclosed, say it is not disclosed in working notes rather than inventing it.
-6. Draft slides in the sample order: cover, policy cluster, college / industrial college cluster, company / financing cluster, other cluster when needed.
-7. Generate a PPTX if the user asks for a deliverable. Use `scripts/build_weekly_pptx.py` with a JSON spec, then inspect the output manually or with the Presentations workflow if available.
-8. Keep a source log with title, URL, publisher, publish date, accessed date, and why the source supports the slide.
+- `references/report-requirements.md`：报告范围、栏目和字段要求。
+- `references/source-workflow.md`：检索顺序、指定信息源、候选池和剔除规则。
+- `references/listed-companies.md`：职教上市公司筛选清单。
+- `references/sample-patterns.md`：样例 PDF 的页式和写作尺度。
 
-## Output Rules
+## 工作流程
 
-- Do not include non-vocational education items unless they directly affect vocational education.
-- Prefer official policy, school, company, stock-exchange, and CNInfo announcements over secondary summaries.
-- For company transactions, separate facts from interpretation. Do not treat media speculation as confirmed.
-- Keep slide body concise: usually 3-5 bullets, each bullet one fact or one implication.
-- Use Chinese report prose unless the user asks otherwise.
-- If producing only a text draft, format it as slide-ready content: `Slide N / 分类 / 标题 / 正文要点 / 来源`.
+1. 确认报告期。用户未指定时，使用截至当天的最近完整双周区间，并在封面写清楚日期。
+2. 明确资料边界：公开来源、邮箱材料、用户提供文件，三者必须分开。用户禁止邮箱时，不读取也不引用邮箱。
+3. 逐项执行 `source-workflow.md` 的检索顺序。先建候选池，再筛选入选事项。
+4. 每个候选事项记录来源、发布日期、主体、事项类型、关键事实、缺失字段、入选或剔除理由。
+5. 按栏目分类：政策、职业学院、产业学院/校企合作、上市公司、融资与交易、其他。
+6. 对入选事项补齐 `report-requirements.md` 要求的字段。未披露的信息写入底稿，不在正文里编造。
+7. 生成前做质量门槛：
+   - 正文事项通常不少于 5 个；如果公开来源不足，应先交付“检索底稿和缺口说明”，不要硬生成低质量 PPT。
+   - 每个入选事项至少有 1 个可靠公开来源；重大交易、院校设置和政策优先使用官方来源。
+   - 每页只能写 1 个主事项，不能把多个弱相关事项拼成一页。
+8. 质量通过后，用 `scripts/build_weekly_pptx.py` 生成 PPTX，并同时交付来源清单。
 
-## PPTX Helper
+## 输出规则
 
-Use the bundled script after preparing a JSON file:
+- 职业教育范围外的 K12、国际教育、素质教育、高等教育泛行业事项，不进入本报告，除非事项直接影响职业教育。
+- 政策页必须写发布机关、发布时间、核心条款和对职教的影响。
+- 产业学院和校企合作页必须写学校方、企业方、合作内容和面向产业。
+- 职业学院页必须写学校名称、所在地、事件类型、批准或发布机关、专业或规模信息。
+- 上市公司页必须核对 `references/listed-companies.md`，并写清股票代码、事件类型、合作或交易对象、披露金额和业务意义。
+- 融资事项必须写公司名称、细分赛道、轮次、金额、投资方和业务进展；未披露则标注“未披露”。
+
+## PPTX 生成
+
+准备 JSON 后运行：
 
 ```bash
 python scripts/build_weekly_pptx.py input.json --output 职教行业周报.pptx
 ```
 
-JSON shape:
+JSON 字段保持英文：
 
 ```json
 {
   "title": "职教行业周报",
-  "period": "2026.06.15-2026.06.28",
+  "period": "2026.06.26-2026.07.09",
   "sections": [
     {
       "name": "职业教育-政策",
       "items": [
         {
-          "headline": "教育发展十五五规划提出加快职业教育新双高建设",
-          "bullets": ["国务院印发相关规划。", "文件提出布局市域产教联合体和行业产教融合共同体。"],
-          "source": "国务院 / 教育部",
+          "headline": "事项标题",
+          "bullets": ["要点一", "要点二"],
+          "source": "来源名称",
           "source_url": "https://..."
         }
       ]
@@ -66,14 +73,11 @@ JSON shape:
 }
 ```
 
-## Quality Gate
+## 停止规则
 
-Before final delivery, verify:
+出现以下情况时先停下并说明，不直接生成 PPT：
 
-- The period is visible on the cover.
-- Every content slide has exactly one main event.
-- Every kept event belongs to the vocational education scope.
-- Listed-company items were checked against the listed-company reference.
-- Policy items identify the issuing authority and effective / implementation point when disclosed.
-- School-enterprise cooperation items identify both sides and the cooperation content.
-- Sources are current, reachable, and recorded.
+- 公开来源不足，正文事项达不到最低数量。
+- 主要事项只有二手转述，找不到官方、公告、学校或企业原文。
+- 用户禁止使用邮箱，但核心信息只存在于邮箱附件。
+- 报告期不明确且无法合理推断。

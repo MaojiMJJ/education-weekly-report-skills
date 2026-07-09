@@ -1,68 +1,73 @@
 ---
 name: education-industry-observation
-description: Generate China education industry observation reports as PPT-style decks or slide-ready outlines. Use when the user asks for 教育行业观察, 教育行业周报, education-industry biweekly observations, non-vocational China education company/policy/AI education scans, or a two-week education industry report based on current sources and prior sample PDFs.
+description: "生成中国教育行业观察双周报或周报的 PPT、逐页稿和来源清单。适用于用户要求制作教育行业观察、教育行业周报、非职业教育行业扫描、K12和教育信息化动态、AI+教育融资和政策、教育上市公司收购再融资合作事项、指定日期区间内的教育行业双周报告。"
 ---
 
-# Education Industry Observation
+# 教育行业观察
 
-## Core Contract
+## 核心任务
 
-Produce a biweekly China education industry observation in PPT form: one cover slide plus one event per content slide. The scope is education outside vocational education, with special attention to AI + education, listed-company transactions/cooperation, non-listed financing, and policy.
+生成《教育行业观察》。默认交付为 PPT：封面 1 页，正文每页 1 个事项，每页包含分类、标题、正文要点和来源。写作语言为中文。
 
-Before drafting, read:
+本 Skill 只覆盖职业教育以外的教育行业。职业教育事项应转入 `vocational-education-weekly-report`，除非用户明确要求合并两份报告。
 
-- `references/report-requirements.md` for scope, item taxonomy, required fields, and exclusions.
-- `references/source-workflow.md` for source hierarchy, search procedure, and verification gates.
-- `references/listed-companies.md` when screening listed-company events.
-- `references/sample-patterns.md` for observed slide structure from the downloaded PDFs.
+除非用户明确允许，不使用邮箱、邮箱附件、内部转发正文或未公开材料作为事实来源。若用户要求只能用公开来源，只能使用公开网页、公告、政府文件、企业官网和可访问媒体文章。
 
-## Workflow
+## 必读文件
 
-1. Confirm or infer the report period. Default to the latest completed two-week window if the user does not specify dates.
-2. Collect candidate events from the source workflow. Search both broad education terms and specific AI education / listed-company / policy terms.
-3. Exclude vocational education items unless the user explicitly asks to merge both reports.
-4. Classify every candidate into one of: listed company, financing and transaction, policy, AI + education, or other non-vocational education.
-5. Keep only material events with enough facts to explain what happened, who is involved, transaction or cooperation terms where disclosed, and why it matters.
-6. Enrich each kept item with the required fields in `report-requirements.md`; if a material field is not disclosed, say it is not disclosed in working notes rather than inventing it.
-7. Draft slides in the sample order: cover, listed company or financing / transaction cluster, other industry cluster, policy cluster.
-8. Generate a PPTX if the user asks for a deliverable. Use `scripts/build_weekly_pptx.py` with a JSON spec, then inspect the output manually or with the Presentations workflow if available.
-9. Keep a source log with title, URL, publisher, publish date, accessed date, and why the source supports the slide.
+开始前按任务需要读取：
 
-## Output Rules
+- `references/report-requirements.md`：报告范围、栏目和字段要求。
+- `references/source-workflow.md`：检索顺序、指定信息源、候选池和剔除规则。
+- `references/listed-companies.md`：非职教教育上市公司筛选清单。
+- `references/sample-patterns.md`：样例 PDF 的页式和写作尺度。
 
-- Use Chinese report prose unless the user asks otherwise.
-- Do not include vocational education items in this report; route them to `vocational-education-weekly-report`.
-- Prefer official policy, exchange, CNInfo, company announcement, investor-relations, and primary financing disclosure over secondary summaries.
-- For transactions, separate disclosed facts from interpretation. Do not infer undisclosed valuation, revenue, profit, or commitment terms.
-- Keep slide body concise: usually 3-5 bullets, each bullet one fact or one implication.
-- If producing only a text draft, format it as slide-ready content: `Slide N / 分类 / 标题 / 正文要点 / 来源`.
+## 工作流程
 
-## PPTX Helper
+1. 确认报告期。用户未指定时，使用截至当天的最近完整双周区间，并在封面写清楚日期。
+2. 明确资料边界：公开来源、邮箱材料、用户提供文件，三者必须分开。用户禁止邮箱时，不读取也不引用邮箱。
+3. 逐项执行 `source-workflow.md` 的检索顺序。先建候选池，再筛选入选事项。
+4. 每个候选事项记录来源、发布日期、主体、事项类型、关键事实、缺失字段、入选或剔除理由。
+5. 按栏目分类：上市公司、融资与交易、政策、AI+教育、其他。
+6. 对入选事项补齐 `report-requirements.md` 要求的字段。未披露的信息写入底稿，不在正文里编造。
+7. 生成前做质量门槛：
+   - 正文事项通常不少于 5 个；如果公开来源不足，应先交付“检索底稿和缺口说明”，不要硬生成低质量 PPT。
+   - 上市公司交易、融资、政策和 AI+教育事项必须有可访问公开来源。
+   - 每页只能写 1 个主事项，不能把多个弱相关事项拼成一页。
+8. 质量通过后，用 `scripts/build_weekly_pptx.py` 生成 PPTX，并同时交付来源清单。
 
-Use the bundled script after preparing a JSON file:
+## 输出规则
+
+- 不写职业教育事项，除非用户明确要求合并。
+- 上市公司页必须核对 `references/listed-companies.md`，并优先使用公告、交易所披露或公司 IR。
+- 收购事项必须尽量写清股比、对价、交易方式、支付形式、估值、标的业务、财务情况、利润承诺和投资意义。
+- 非公开发行或再融资事项必须写融资规模、发行后影响和资金用途。
+- 业务合作事项必须写合作方、合作方介绍、合作内容和合作意义。
+- AI+教育融资页必须写场景分类、产品形态、客户类型、轮次、金额、币种、投资方和业务进展。
+- 政策页必须写发布机关、发布时间、核心条款和对教育行业的影响。
+
+## PPTX 生成
+
+准备 JSON 后运行：
 
 ```bash
 python scripts/build_weekly_pptx.py input.json --output 教育行业观察.pptx
 ```
 
-JSON shape:
+JSON 字段保持英文：
 
 ```json
 {
   "title": "教育行业观察",
-  "period": "2026.06.22-2026.07.05",
+  "period": "2026.06.26-2026.07.09",
   "sections": [
     {
       "name": "行业速览-融资与交易",
       "items": [
         {
-          "headline": "某 AI 教育公司完成新一轮融资",
-          "bullets": [
-            "公司披露完成新一轮融资，投资方和融资金额以公告为准。",
-            "业务聚焦 AI 学习场景，面向 B 端学校或 C 端家庭提供产品。",
-            "后续关注产品落地、用户规模、营收表现及与上市公司的协同可能。"
-          ],
-          "source": "公司公告 / 媒体披露",
+          "headline": "事项标题",
+          "bullets": ["要点一", "要点二"],
+          "source": "来源名称",
           "source_url": "https://..."
         }
       ]
@@ -71,15 +76,11 @@ JSON shape:
 }
 ```
 
-## Quality Gate
+## 停止规则
 
-Before final delivery, verify:
+出现以下情况时先停下并说明，不直接生成 PPT：
 
-- The period is visible on the cover.
-- Every content slide has exactly one main event.
-- Every kept event belongs to non-vocational education scope.
-- Listed-company items were checked against the listed-company reference and primary announcements where available.
-- Acquisition, private placement, cooperation, and financing items include the required transaction fields when disclosed.
-- AI + education items identify the scenario category and customer / product type.
-- Policy items identify the issuing authority and AI education relevance when applicable.
-- Sources are current, reachable, and recorded.
+- 公开来源不足，正文事项达不到最低数量。
+- 上市公司或融资事项只有二手传闻，找不到公告、公司原文或可靠媒体原文。
+- 用户禁止使用邮箱，但核心信息只存在于邮箱附件。
+- 报告期不明确且无法合理推断。
