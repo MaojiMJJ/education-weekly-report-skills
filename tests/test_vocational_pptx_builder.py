@@ -61,15 +61,15 @@ class VocationalPptxBuilderTests(unittest.TestCase):
         self.assertAlmostEqual(7.5, presentation.slide_height / 914400, places=2)
         self.assertEqual(8, len(presentation.slides))
         all_text = "\n".join(slide_text(slide) for slide in presentation.slides)
-        self.assertIn("本期核心观点", slide_text(presentation.slides[1]))
+        self.assertIn("本期主要动态", slide_text(presentation.slides[1]))
         self.assertIn("行业判断", all_text)
-        self.assertIn("后续跟踪", all_text)
+        self.assertNotIn("后续跟踪", all_text)
         self.assertIn("主体背景", all_text)
         self.assertIn("受益", all_text)
         self.assertIn("风险", all_text)
         self.assertIn("测试省教育厅", all_text)
         self.assertIn("2026-06-16", all_text)
-        self.assertIn("本期行业判断", slide_text(presentation.slides[-1]))
+        self.assertIn("本期行业小结", slide_text(presentation.slides[-1]))
         self.assertTrue(
             any(
                 getattr(shape, "has_table", False)
@@ -127,6 +127,24 @@ class VocationalPptxBuilderTests(unittest.TestCase):
             if hasattr(shape, "text") and first_fact[:-1] in shape.text
         )
         self.assertEqual(10.0, facts_box.text_frame.paragraphs[0].font.size.pt)
+
+    def test_public_deck_uses_update_digest_and_hides_internal_tracking(self):
+        builder = load_builder_module()
+        report = load_fixture("vocational_valid.json")
+
+        builder.build(report, self.output, self.sources, self.quality)
+
+        presentation = Presentation(self.output)
+        digest_text = slide_text(presentation.slides[1])
+        all_text = "\n".join(slide_text(slide) for slide in presentation.slides)
+        self.assertIn("本期主要动态", digest_text)
+        self.assertIn("融资与交易", digest_text)
+        self.assertIn("政策", digest_text)
+        self.assertIn(report["sections"][0]["items"][0]["headline"], digest_text)
+        self.assertIn("本期行业小结", slide_text(presentation.slides[-1]))
+        for internal_label in ("本期核心观点", "证据事项", "后续跟踪", "下一期验证"):
+            self.assertNotIn(internal_label, all_text)
+        self.assertIn("tracking", report["sections"][0]["items"][0])
 
 
 if __name__ == "__main__":

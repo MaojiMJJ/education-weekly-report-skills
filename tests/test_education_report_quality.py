@@ -120,6 +120,36 @@ class EducationReportQualityTests(unittest.TestCase):
                     quality.validate_report(report)
                 self.assertIn("内部工作内容", str(caught.exception))
 
+    def test_rejects_follow_up_language_in_public_output_fields(self):
+        quality = load_quality_module()
+        mutations = (
+            (
+                "weekly_judgment",
+                lambda report: report.__setitem__(
+                    "weekly_judgment",
+                    "本期教育行业已形成多项公开进展，政策、融资和学校服务均有新增动作。"
+                    "相关事项的行业影响已经在正文说明，下一期重点跟踪项目落地和经营数据。"
+                    "本页用于同步当前进展，不应包含投资部内部任务安排。"
+                    "公开材料应围绕已经发生并经过来源核验的事实展开，避免把研究分工和待办事项混入行业结论。",
+                ),
+            ),
+            (
+                "analysis",
+                lambda report: report["sections"][0]["items"][0].__setitem__(
+                    "analysis",
+                    "该事项改变了行业供给结构，但后续跟踪仍需由投资部内部安排，不应出现在公开正文。",
+                ),
+            ),
+        )
+
+        for label, mutate in mutations:
+            with self.subTest(label=label):
+                report = load_fixture("education_valid.json")
+                mutate(report)
+                with self.assertRaises(quality.ReportQualityError) as caught:
+                    quality.validate_report(report)
+                self.assertIn("公开报告", str(caught.exception))
+
     def test_rejects_event_outside_report_period(self):
         quality = load_quality_module()
         report = load_fixture("education_valid.json")

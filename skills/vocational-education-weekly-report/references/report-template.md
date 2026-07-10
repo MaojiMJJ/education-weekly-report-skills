@@ -3,9 +3,9 @@
 ## 报告结构
 
 1. 封面。
-2. 本期核心观点，1-3 条。
+2. 本期主要动态，按非空栏目自动列出正式事项。
 3. 重点事件，至少 5 个。
-4. 本期行业判断，100-200 字。
+4. 本期行业小结，100-200 字，不含下一期任务。
 
 ## JSON 示例
 
@@ -43,7 +43,7 @@
           "analysis": "说明事件改变的行业变量、趋势和影响机制。",
           "beneficiaries": ["受益方及机制"],
           "risks": ["风险及失败条件"],
-          "tracking": "下一期要验证的指标或节点。",
+          "tracking": "内部研究使用的下一期验证指标或节点，不进入公开PPT。",
           "scores": {
             "industry_impact": 4,
             "policy_importance": 2,
@@ -95,10 +95,11 @@
 
 ## 页面映射
 
-- `core_insights` 生成本期核心观点页。
+- `core_insights` 用于内部分析一致性校验，不直接进入公开 PPT。
+- `sections` 的栏目名和 `headline` 自动生成“本期主要动态”页，最多展示 8 个正式事项。
 - 每个 `item` 生成 1 个事件页。
 - `subject`、`event_date` 和 `event_type` 进入元数据行，`period_trigger` 用于出刊前校验，`background` 进入主体背景区。
-- `facts` 进入事实区，`analysis`、`beneficiaries` 和 `risks` 进入行业判断框，`tracking` 进入后续跟踪框。
+- `facts` 进入事实区，`analysis`、`beneficiaries` 和 `risks` 进入行业判断框；`tracking` 仅保留在内部研究数据中。
 - `sources` 在页脚显示来源名和日期，完整 URL 进入独立来源清单。
-- `weekly_judgment` 生成结尾页。
+- `weekly_judgment` 生成“本期行业小结”页，不得包含下一期任务或内部跟踪安排。
 - `quality_review` 生成独立质量报告；任一得分低于 8 或总分低于 32 时拒绝生成。

@@ -43,6 +43,15 @@ INTERNAL_MARKERS = (
     "工作底稿",
 )
 
+PUBLIC_OUTPUT_MARKERS = (
+    "本期核心观点",
+    "证据事项",
+    "后续跟踪",
+    "下一期",
+    "重点跟踪",
+    "验证重点",
+)
+
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 PERIOD_PATTERN = re.compile(
     r"^(\d{4})[.-](\d{2})[.-](\d{2})\s*-\s*(\d{4})[.-](\d{2})[.-](\d{2})$"
@@ -188,6 +197,14 @@ def _check_internal_markers(issues, label, value):
             break
 
 
+def _check_public_output_markers(issues, label, value):
+    searchable_text = " ".join(_iter_text_values(value))
+    for marker in PUBLIC_OUTPUT_MARKERS:
+        if marker in searchable_text:
+            issues.append(f"{label}包含投资部内部措辞“{marker}”，不能进入公开报告")
+            break
+
+
 def validate_report(report):
     """校验报告并返回可供生成器使用的质量摘要。"""
 
@@ -201,6 +218,15 @@ def validate_report(report):
         {
             "title": report.get("title"),
             "core_insights": report.get("core_insights"),
+            "weekly_judgment": report.get("weekly_judgment"),
+            "quality_review": report.get("quality_review"),
+        },
+    )
+    _check_public_output_markers(
+        issues,
+        "报告顶层公开字段",
+        {
+            "title": report.get("title"),
             "weekly_judgment": report.get("weekly_judgment"),
             "quality_review": report.get("quality_review"),
         },
@@ -238,6 +264,20 @@ def validate_report(report):
         if item.get("content_role") != "event":
             issues.append(f"事项 {item_id} 的 content_role 必须是 event")
         _check_internal_markers(issues, f"事项 {item_id} ", [section_name, item])
+        _check_public_output_markers(
+            issues,
+            f"事项 {item_id} 的公开字段",
+            {
+                "section": section_name,
+                "headline": item.get("headline"),
+                "short_title": item.get("short_title"),
+                "background": item.get("background"),
+                "facts": item.get("facts"),
+                "analysis": item.get("analysis"),
+                "beneficiaries": item.get("beneficiaries"),
+                "risks": item.get("risks"),
+            },
+        )
 
         _check_text(issues, f"事项 {item_id} 的 id", item.get("id"), 1, 20)
         _check_text(issues, f"事项 {item_id} 的 headline", item.get("headline"), 8, 70)

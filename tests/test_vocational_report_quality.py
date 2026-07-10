@@ -123,6 +123,21 @@ class VocationalReportQualityTests(unittest.TestCase):
                     quality.validate_report(report)
                 self.assertIn("内部工作内容", str(caught.exception))
 
+    def test_rejects_follow_up_language_in_public_output_fields(self):
+        quality = load_quality_module()
+        report = load_fixture("vocational_valid.json")
+        report["weekly_judgment"] = (
+            "本期职业教育政策、院校和企业均有正式进展，正文已经说明公开事实及行业影响。"
+            "下一期重点跟踪项目投入、招生和就业数据属于投资部内部安排，不应进入对外材料。"
+            "本页只用于同步当前行业变化。"
+            "公开材料应围绕已经发生并经过来源核验的事实展开，避免把研究分工和待办事项混入行业结论。"
+        )
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("公开报告", str(caught.exception))
+
     def test_event_type_alias_cannot_bypass_primary_source(self):
         quality = load_quality_module()
         report = load_fixture("vocational_valid.json")
