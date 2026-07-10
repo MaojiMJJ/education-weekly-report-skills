@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""根据结构化 JSON 生成周报 PPTX。"""
+"""根据通过质量校验的结构化 JSON 生成教育行业研究周报 PPTX。"""
 
 from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -15,25 +16,51 @@ from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Inches, Pt
 
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from report_quality import build_sources_markdown, iter_events, validate_report
+
+
 FONT = "Microsoft YaHei"
-TITLE_COLOR = RGBColor(28, 59, 92)
-ACCENT = RGBColor(29, 102, 145)
-LIGHT_BG = RGBColor(239, 244, 248)
-TEXT = RGBColor(36, 40, 45)
-MUTED = RGBColor(110, 118, 128)
+TITLE_FONT = "Microsoft YaHei"
+INK = RGBColor(31, 38, 46)
+MUTED = RGBColor(91, 104, 112)
+GREEN = RGBColor(117, 143, 76)
+PALE_GREEN = RGBColor(218, 230, 193)
+VERY_PALE_GREEN = RGBColor(241, 246, 232)
+WHITE = RGBColor(255, 255, 255)
+LINE = RGBColor(159, 181, 119)
+WARM = RGBColor(245, 240, 225)
 
 
-def add_textbox(slide, x, y, w, h, text="", font_size=18, bold=False, color=TEXT):
+def add_textbox(
+    slide,
+    x,
+    y,
+    w,
+    h,
+    text="",
+    font_size=18,
+    bold=False,
+    color=INK,
+    align=PP_ALIGN.LEFT,
+    valign=MSO_ANCHOR.TOP,
+    margin=0.06,
+):
     box = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
     frame = box.text_frame
     frame.clear()
     frame.word_wrap = True
-    frame.margin_left = Inches(0.08)
-    frame.margin_right = Inches(0.08)
-    frame.margin_top = Inches(0.04)
-    frame.margin_bottom = Inches(0.04)
+    frame.margin_left = Inches(margin)
+    frame.margin_right = Inches(margin)
+    frame.margin_top = Inches(margin)
+    frame.margin_bottom = Inches(margin)
+    frame.vertical_anchor = valign
     paragraph = frame.paragraphs[0]
     paragraph.text = str(text)
+    paragraph.alignment = align
     paragraph.font.name = FONT
     paragraph.font.size = Pt(font_size)
     paragraph.font.bold = bold
@@ -41,162 +68,294 @@ def add_textbox(slide, x, y, w, h, text="", font_size=18, bold=False, color=TEXT
     return box
 
 
-def add_bullets(slide, x, y, w, h, bullets):
+def add_rect(slide, x, y, w, h, fill=WHITE, line=LINE, radius=False):
+    shape_type = MSO_SHAPE.ROUNDED_RECTANGLE if radius else MSO_SHAPE.RECTANGLE
+    shape = slide.shapes.add_shape(shape_type, Inches(x), Inches(y), Inches(w), Inches(h))
+    shape.fill.solid()
+    shape.fill.fore_color.rgb = fill
+    shape.line.color.rgb = line
+    shape.line.width = Pt(0.8)
+    return shape
+
+
+def add_bullets(slide, x, y, w, h, bullets, font_size=13.5, gap=5):
     box = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
     frame = box.text_frame
     frame.clear()
     frame.word_wrap = True
-    frame.margin_left = Inches(0.12)
-    frame.margin_right = Inches(0.12)
-    frame.margin_top = Inches(0.05)
-    frame.margin_bottom = Inches(0.05)
+    frame.margin_left = Inches(0.04)
+    frame.margin_right = Inches(0.04)
+    frame.margin_top = Inches(0.02)
+    frame.margin_bottom = Inches(0.02)
     for index, bullet in enumerate(bullets):
         paragraph = frame.paragraphs[0] if index == 0 else frame.add_paragraph()
-        paragraph.text = str(bullet)
-        paragraph.level = 0
-        paragraph.space_after = Pt(7)
+        paragraph.text = f"•  {bullet}"
+        paragraph.space_after = Pt(gap)
         paragraph.font.name = FONT
-        paragraph.font.size = Pt(15)
-        paragraph.font.color.rgb = TEXT
+        paragraph.font.size = Pt(font_size)
+        paragraph.font.color.rgb = INK
     return box
 
 
-def add_footer(slide, source: str | None, source_url: str | None):
-    if not source and not source_url:
-        return
-    text = "来源：" + (source or "")
-    if source_url:
-        text += f" | {source_url}"
-    add_textbox(slide, 0.55, 7.05, 12.2, 0.25, text, font_size=8, color=MUTED)
+def add_header(slide, title, number=None):
+    add_rect(slide, 0.42, 0.14, 9.16, 0.77, fill=PALE_GREEN, line=LINE)
+    label = f"{number}  {title}" if number is not None else title
+    add_textbox(slide, 0.55, 0.23, 8.75, 0.53, label, 24, True, INK, valign=MSO_ANCHOR.MIDDLE)
 
 
-def add_cover(prs: Presentation, spec: dict[str, Any]):
+def source_footer(item):
+    parts = []
+    for source in item.get("sources") or []:
+        label = source.get("name", "")
+        if source.get("published_at"):
+            label += f"（{source['published_at']}）"
+        if label and label not in parts:
+            parts.append(label)
+    return "；".join(parts)
+
+
+def add_cover(prs: Presentation, report: dict[str, Any]):
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     slide.background.fill.solid()
-    slide.background.fill.fore_color.rgb = RGBColor(255, 255, 255)
+    slide.background.fill.fore_color.rgb = WHITE
+    add_rect(slide, 0.55, 0.55, 8.9, 1.02, fill=PALE_GREEN, line=LINE)
+    add_textbox(slide, 0.82, 0.73, 8.35, 0.62, report["title"], 30, True, INK, valign=MSO_ANCHOR.MIDDLE)
+    add_textbox(slide, 0.8, 2.65, 8.4, 0.7, report["period"], 23, False, GREEN, align=PP_ALIGN.CENTER)
+    add_textbox(slide, 0.8, 4.72, 8.4, 0.45, "行业重要变化、影响判断与跟踪重点", 15, False, MUTED, align=PP_ALIGN.CENTER)
+    add_rect(slide, 2.75, 5.58, 4.5, 0.06, fill=GREEN, line=GREEN)
 
-    band = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(7.5))
-    band.fill.solid()
-    band.fill.fore_color.rgb = LIGHT_BG
-    band.line.fill.background()
 
-    accent = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(0.18), Inches(7.5))
-    accent.fill.solid()
-    accent.fill.fore_color.rgb = ACCENT
-    accent.line.fill.background()
+def add_insights_slide(prs: Presentation, report: dict[str, Any]):
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    slide.background.fill.solid()
+    slide.background.fill.fore_color.rgb = WHITE
+    add_header(slide, "本期核心观点")
+    insights = report["core_insights"]
+    block_height = 1.48 if len(insights) == 3 else 1.78
+    start_y = 1.25
+    for index, insight in enumerate(insights, 1):
+        y = start_y + (index - 1) * (block_height + 0.28)
+        add_textbox(slide, 0.72, y + 0.04, 0.58, 0.58, str(index), 22, True, WHITE, align=PP_ALIGN.CENTER, valign=MSO_ANCHOR.MIDDLE)
+        circle = slide.shapes[-1]
+        circle.fill.solid()
+        circle.fill.fore_color.rgb = GREEN
+        circle.line.color.rgb = GREEN
+        add_textbox(slide, 1.48, y, 7.8, block_height, insight["claim"], 19, True, INK, valign=MSO_ANCHOR.MIDDLE)
+        evidence = "证据事项：" + "、".join(insight["evidence_ids"])
+        add_textbox(slide, 1.52, y + block_height - 0.37, 7.3, 0.27, evidence, 9.5, False, MUTED)
 
-    add_textbox(slide, 0.85, 2.35, 11.6, 0.8, spec.get("title", "教育行业观察"), 34, True, TITLE_COLOR)
-    add_textbox(slide, 0.9, 3.25, 10.0, 0.35, spec.get("period", ""), 18, False, MUTED)
-    subtitle = spec.get("subtitle") or "每两周一次 | 每页一个事项 | 标题 + 正文内容"
-    add_textbox(slide, 0.9, 4.0, 10.5, 0.35, subtitle, 14, False, TEXT)
+
+def add_analysis_box(slide, item, x, y, w, h):
+    add_rect(slide, x, y, w, h, fill=VERY_PALE_GREEN, line=LINE)
+    add_textbox(slide, x + 0.12, y + 0.08, 1.05, 0.28, "行业判断", 11, True, GREEN)
+    add_textbox(slide, x + 1.05, y + 0.06, w - 1.18, h - 0.12, item["analysis"], 11.5, False, INK, valign=MSO_ANCHOR.MIDDLE)
+
+
+def add_tracking_box(slide, item, x, y, w, h):
+    add_rect(slide, x, y, w, h, fill=WARM, line=RGBColor(203, 188, 145))
+    add_textbox(slide, x + 0.12, y + 0.06, 1.05, 0.25, "后续跟踪", 10.5, True, RGBColor(123, 93, 35))
+    add_textbox(slide, x + 1.05, y + 0.04, w - 1.18, h - 0.08, item["tracking"], 10.5, False, INK, valign=MSO_ANCHOR.MIDDLE)
+
+
+def add_evidence_table(slide, evidence, x, y, w, h):
+    columns = evidence.get("columns") or []
+    rows = evidence.get("rows") or []
+    if not columns or not rows:
+        return
+    table_shape = slide.shapes.add_table(len(rows) + 1, len(columns), Inches(x), Inches(y), Inches(w), Inches(h))
+    table = table_shape.table
+    column_width = Inches(w / len(columns))
+    for column in table.columns:
+        column.width = column_width
+    for col_index, label in enumerate(columns):
+        cell = table.cell(0, col_index)
+        cell.text = str(label)
+        cell.fill.solid()
+        cell.fill.fore_color.rgb = PALE_GREEN
+    for row_index, row in enumerate(rows, 1):
+        for col_index in range(len(columns)):
+            cell = table.cell(row_index, col_index)
+            cell.text = str(row[col_index]) if col_index < len(row) else ""
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = WHITE
+    for row in table.rows:
+        for cell in row.cells:
+            cell.margin_left = Inches(0.04)
+            cell.margin_right = Inches(0.04)
+            cell.margin_top = Inches(0.02)
+            cell.margin_bottom = Inches(0.02)
+            for paragraph in cell.text_frame.paragraphs:
+                paragraph.alignment = PP_ALIGN.CENTER
+                paragraph.font.name = FONT
+                paragraph.font.size = Pt(9.5)
+                paragraph.font.color.rgb = INK
+                if row is table.rows[0]:
+                    paragraph.font.bold = True
 
 
 def add_item_slide(prs: Presentation, section_name: str, item: dict[str, Any], number: int):
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     slide.background.fill.solid()
-    slide.background.fill.fore_color.rgb = RGBColor(255, 255, 255)
+    slide.background.fill.fore_color.rgb = WHITE
+    add_header(slide, section_name, number)
 
-    top = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(0.52))
-    top.fill.solid()
-    top.fill.fore_color.rgb = LIGHT_BG
-    top.line.fill.background()
+    add_rect(slide, 0.45, 1.02, 1.08, 5.92, fill=PALE_GREEN, line=LINE)
+    add_textbox(
+        slide,
+        0.55,
+        1.19,
+        0.88,
+        5.55,
+        item["short_title"],
+        15,
+        True,
+        INK,
+        align=PP_ALIGN.CENTER,
+        valign=MSO_ANCHOR.MIDDLE,
+        margin=0.02,
+    )
+    add_rect(slide, 1.62, 1.02, 7.96, 5.92, fill=WHITE, line=LINE)
 
-    add_textbox(slide, 0.5, 0.12, 5.2, 0.28, f"{number} {section_name}", 11, True, ACCENT)
+    evidence = item.get("evidence_table")
+    if evidence:
+        add_bullets(slide, 1.85, 1.2, 7.48, 1.45, item["facts"][:3], 11.5, 3)
+        add_evidence_table(slide, evidence, 2.0, 2.7, 7.15, 1.65)
+        add_analysis_box(slide, item, 1.86, 4.55, 7.45, 1.0)
+        add_tracking_box(slide, item, 1.86, 5.75, 7.45, 0.62)
+    else:
+        add_bullets(slide, 1.85, 1.23, 7.46, 3.02, item["facts"], 13.0, 6)
+        add_analysis_box(slide, item, 1.86, 4.42, 7.45, 1.12)
+        add_tracking_box(slide, item, 1.86, 5.76, 7.45, 0.62)
 
-    title_panel = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.55), Inches(1.08), Inches(2.35), Inches(5.78))
-    title_panel.fill.solid()
-    title_panel.fill.fore_color.rgb = LIGHT_BG
-    title_panel.line.color.rgb = RGBColor(218, 228, 236)
-    title_panel.text_frame.clear()
-    title_panel.text_frame.word_wrap = True
-    title_panel.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
-    paragraph = title_panel.text_frame.paragraphs[0]
-    paragraph.text = str(item.get("headline", ""))
-    paragraph.alignment = PP_ALIGN.CENTER
-    paragraph.font.name = FONT
-    paragraph.font.size = Pt(21)
-    paragraph.font.bold = True
-    paragraph.font.color.rgb = TITLE_COLOR
-
-    add_bullets(slide, 3.25, 1.08, 9.25, 5.72, item.get("bullets") or [])
-    add_footer(slide, item.get("source"), item.get("source_url"))
-
-
-def validate(spec: dict[str, Any]) -> None:
-    if not spec.get("title"):
-        raise ValueError("JSON 必须包含 title")
-    if not spec.get("period"):
-        raise ValueError("JSON 必须包含 period")
-    sections = spec.get("sections")
-    if not isinstance(sections, list) or not sections:
-        raise ValueError("JSON 必须包含非空 sections")
-    for section in sections:
-        if not section.get("name"):
-            raise ValueError("每个 section 必须包含 name")
-        items = section.get("items")
-        if not isinstance(items, list) or not items:
-            raise ValueError(f"栏目 {section.get('name')} 必须包含 items")
-        for item in items:
-            if not item.get("headline"):
-                raise ValueError("每个 item 必须包含 headline")
-            if not item.get("bullets"):
-                raise ValueError(f"事项 {item.get('headline')} 必须包含 bullets")
+    source = source_footer(item)
+    add_textbox(slide, 0.5, 7.05, 7.5, 0.24, f"来源：{source}", 8.5, False, MUTED, valign=MSO_ANCHOR.MIDDLE)
+    score = sum(item["scores"].values())
+    add_textbox(slide, 8.15, 7.05, 1.28, 0.24, f"价值评分 {score}/25", 8.5, True, GREEN, align=PP_ALIGN.RIGHT, valign=MSO_ANCHOR.MIDDLE)
 
 
-def build(spec: dict[str, Any], output: Path) -> None:
-    validate(spec)
-    prs = Presentation()
-    prs.slide_width = Inches(13.333)
-    prs.slide_height = Inches(7.5)
-    add_cover(prs, spec)
+def add_summary_slide(prs: Presentation, report: dict[str, Any]):
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    slide.background.fill.solid()
+    slide.background.fill.fore_color.rgb = WHITE
+    add_header(slide, "本期行业判断")
+    add_rect(slide, 0.72, 1.35, 8.56, 2.18, fill=VERY_PALE_GREEN, line=LINE)
+    add_textbox(slide, 1.0, 1.65, 8.0, 1.58, report["weekly_judgment"], 17, False, INK, valign=MSO_ANCHOR.MIDDLE)
+    add_textbox(slide, 0.8, 4.08, 2.0, 0.36, "下一期验证", 16, True, GREEN)
+    tracking = []
+    for _section_name, item in iter_events(report):
+        if item["tracking"] not in tracking:
+            tracking.append(item["tracking"])
+        if len(tracking) == 3:
+            break
+    add_bullets(slide, 0.9, 4.58, 8.1, 1.78, tracking, 13.5, 8)
+
+
+def build(report: dict[str, Any], output: Path, sources_output: Path | None = None) -> None:
+    validate_report(report)
+    presentation = Presentation()
+    presentation.slide_width = Inches(10)
+    presentation.slide_height = Inches(7.5)
+
+    add_cover(presentation, report)
+    add_insights_slide(presentation, report)
     number = 1
-    for section in spec["sections"]:
-        for item in section["items"]:
-            add_item_slide(prs, section["name"], item, number)
-            number += 1
+    for section_name, item in iter_events(report):
+        add_item_slide(presentation, section_name, item, number)
+        number += 1
+    add_summary_slide(presentation, report)
+
+    output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
-    prs.save(output)
+    presentation.save(output)
+
+    if sources_output:
+        sources_output = Path(sources_output)
+        sources_output.parent.mkdir(parents=True, exist_ok=True)
+        sources_output.write_text(build_sources_markdown(report), encoding="utf-8")
 
 
 def self_test_spec() -> dict[str, Any]:
+    items = []
+    for index in range(1, 6):
+        items.append(
+            {
+                "id": f"T{index}",
+                "headline": f"[自检样例] 教育行业事项 {index}",
+                "short_title": f"自检事项 {index}",
+                "event_date": f"2026-07-0{index}",
+                "subject": f"自检主体 {index}",
+                "event_type": "产品" if index % 2 else "政策",
+                "facts": [
+                    "该事项披露了明确的主体、时间和新增动作。",
+                    "公开材料提供了产品、客户或政策执行信息。",
+                    "事项可以形成后续可验证的业务或政策指标。",
+                ],
+                "analysis": "该事项用于验证生成器能否把事实、行业解释和跟踪问题分层呈现，而不是输出新闻摘录。",
+                "beneficiaries": ["教育服务企业"],
+                "risks": ["后续落地不及预期"],
+                "tracking": "跟踪下一期公开披露的项目进度和量化指标。",
+                "scores": {
+                    "industry_impact": 4,
+                    "policy_importance": 3,
+                    "commercial_value": 4,
+                    "technology_relevance": 4,
+                    "investment_relevance": 3,
+                },
+                "score_reasons": {
+                    "industry_impact": "影响明确教育场景。",
+                    "policy_importance": "与政策方向相关。",
+                    "commercial_value": "存在可验证业务价值。",
+                    "technology_relevance": "包含技术应用。",
+                    "investment_relevance": "可继续跟踪量化指标。",
+                },
+                "sources": [
+                    {
+                        "name": f"自检来源 {index}",
+                        "url": f"https://example.com/self-test/{index}",
+                        "published_at": f"2026-07-0{index}",
+                        "source_type": "test",
+                        "is_primary": True,
+                    }
+                ],
+            }
+        )
     return {
         "title": "教育行业观察",
-        "period": "2026.06.26-2026.07.09",
-        "sections": [
+        "period": "2026.06.22-2026.07.05",
+        "core_insights": [
             {
-                "name": "行业速览-政策",
-                "items": [
-                    {
-                        "headline": "教育发展规划提出推进人工智能全学段教育",
-                        "bullets": [
-                            "国务院印发教育发展相关规划，提出推进人工智能全学段教育。",
-                            "政策强调开展人工智能+教育行动，推动教育数智化变革。",
-                            "后续应跟踪地方行动计划、学校应用场景和企业产品落地。"
-                        ],
-                        "source": "示例来源",
-                        "source_url": "https://example.com"
-                    }
-                ]
+                "claim": "自检样例验证研究结构能够稳定映射到幻灯片",
+                "evidence_ids": ["T1", "T2"],
             }
-        ]
+        ],
+        "sections": [
+            {"name": "行业速览-产品", "items": items[:2]},
+            {"name": "行业速览-政策", "items": items[2:4]},
+            {"name": "行业速览-AI教育", "items": items[4:]},
+        ],
+        "weekly_judgment": "本自检样例用于确认报告生成器只接受完整的研究结构。每个事项均包含事实、行业解释、受益方、风险和后续验证问题，核心观点能够回指具体事项，最终报告也会单独形成行业判断页和来源清单，从而避免把检索过程、空结果或低价值信息放入正式正文。",
     }
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="根据 JSON 生成周报 PPTX")
+    parser = argparse.ArgumentParser(description="根据研究型 JSON 生成教育行业观察 PPTX")
     parser.add_argument("input_json", nargs="?", help="报告 JSON 文件路径")
     parser.add_argument("--output", required=True, help="输出 PPTX 路径")
-    parser.add_argument("--self-test", action="store_true", help="使用内置示例数据")
+    parser.add_argument("--sources-output", help="输出 Markdown 来源清单路径")
+    parser.add_argument("--self-test", action="store_true", help="使用内置自检数据")
     args = parser.parse_args()
 
     if args.self_test:
-        spec = self_test_spec()
+        report = self_test_spec()
     else:
         if not args.input_json:
             raise SystemExit("未使用 --self-test 时必须提供 input_json")
-        spec = json.loads(Path(args.input_json).read_text(encoding="utf-8"))
-    build(spec, Path(args.output))
+        report = json.loads(Path(args.input_json).read_text(encoding="utf-8"))
+
+    build(report, Path(args.output), Path(args.sources_output) if args.sources_output else None)
     print(f"已写入 {args.output}")
+    if args.sources_output:
+        print(f"已写入 {args.sources_output}")
 
 
 if __name__ == "__main__":

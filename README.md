@@ -1,34 +1,86 @@
-# 教育行业双周报 Skill 仓库
+# 教育行业情报双周报 Skill
 
-本仓库用于镜像两个本地 Codex Skill，目标是生成符合既有样例和 Word 要求的教育行业双周报。
+本仓库包含两个 Codex Skill，用于把公开信息转化为面向产业研究、投资讨论和项目机会发现的教育行业周报或双周报。
 
-## Skill 清单
-
-- `skills/vocational-education-weekly-report`
-  - 生成《职教行业周报》
-  - 覆盖职业教育政策、职业院校动态、校企合作产业学院、职教上市公司事项、职教非上市企业事项。
+## Skill
 
 - `skills/education-industry-observation`
-  - 生成《教育行业观察》
-  - 覆盖职业教育以外的教育行业，包括 K12 学校、K12 培训、教育信息化、高等教育、国际教育、素质教育、AI+教育、上市公司事项、融资交易和政策。
+  - 生成《教育行业观察》。
+  - 覆盖 K12、教育信息化、高等教育、国际教育、素质教育、AI+教育、教育上市公司和融资交易。
+- `skills/vocational-education-weekly-report`
+  - 生成《职教行业周报》。
+  - 覆盖职教政策、职业本科、职业院校、产业学院、产教融合、技能培训、职教上市公司和融资交易。
 
-## 当前诊断背景
+## 工作流
 
-第一次公开来源版报告没有达到要求，主要问题不是 PPTX 生成脚本，而是 Skill 和执行流程的约束不够硬：
+```text
+检索底稿
+  -> 候选池
+  -> 事实与来源核验
+  -> 五维评分
+  -> 事件研究卡
+  -> 本期核心观点
+  -> 周报 JSON
+  -> 自动质量校验
+  -> 4:3 PPTX 与来源清单
+  -> 全页渲染复核
+```
 
-- 没有强制逐个跑完指定信息源。
-- 没有设置最低事项数量和不足时的停止规则。
-- 没有区分“邮箱材料可用”和“只能用公开来源”两种流程。
-- 没有把检索底稿、候选池、剔除理由作为生成前质量门槛。
-- PPT 生成前没有要求先确认事项池质量。
+五维评分包括行业影响、政策重要性、商业价值、技术相关性和投资相关性。每个事项必须写明评分理由、行业判断、受益方、风险和下一期验证问题。
 
-后续改动应先修复 Skill 的检索、筛选和质量门槛，再优化 PPT 样式。
+## 出刊门槛
 
-## 本地路径
+- 至少 5 个高价值正文事项。
+- 事项总分不低于 16；或行业影响不低于 4，且其他维度至少一项不低于 4。
+- 重大事项必须有一手来源。
+- 同一来源文件原则上只形成一个事项。
+- 检索结论、低价值名单、重复政策和活动宣传不能进入正文。
+- 40 分复核中任一维度低于 8 分或总分低于 32 分，不得出刊。
+
+不满足门槛时只交付检索底稿、候选池、剔除理由和缺口说明，不生成伪完整 PPT。
+
+## 报告结构
+
+1. 封面。
+2. 本期核心观点，1-3 条。
+3. 重点事件，每页 1 个事项。
+4. 本期行业判断，100-200 字。
+
+默认页面为 4:3，事件页包含事实、行业判断、后续跟踪和来源；名单或条款对比可使用证据表格。完整 URL 单独写入来源清单。
+
+## 生成
+
+```powershell
+python skills/education-industry-observation/scripts/build_weekly_pptx.py report.json `
+  --output 教育行业观察.pptx `
+  --sources-output 教育行业观察_来源清单.md
+
+python skills/vocational-education-weekly-report/scripts/build_weekly_pptx.py report.json `
+  --output 职教行业周报.pptx `
+  --sources-output 职教行业周报_来源清单.md
+```
+
+生成器会在写入 PPT 前执行质量校验，旧版新闻摘要 JSON 会被拒绝。
+
+## 测试
+
+```powershell
+python -m unittest discover -s tests -v
+
+$env:PYTHONUTF8 = "1"
+python C:\Users\maoji\.codex\skills\.system\skill-creator\scripts\quick_validate.py `
+  skills\education-industry-observation
+python C:\Users\maoji\.codex\skills\.system\skill-creator\scripts\quick_validate.py `
+  skills\vocational-education-weekly-report
+```
+
+测试固定包含：0709 失败样例拒绝、合格研究结构放行、低分事项拒绝、重复来源拒绝、4:3 页面、证据表格和来源清单。
+
+## 本地部署
 
 - GitHub 镜像：`D:\0GitHub\education-weekly-report-skills`
-- 本地运行时 Skill：
-  - `C:\Users\maoji\.codex\skills\vocational-education-weekly-report`
+- 运行时 Skill：
   - `C:\Users\maoji\.codex\skills\education-industry-observation`
+  - `C:\Users\maoji\.codex\skills\vocational-education-weekly-report`
 
-修改本仓库后，需要同步回本地运行时目录，并重新运行 `quick_validate.py`。
+修改后需要同步 GitHub 镜像和两个运行时目录，并在同步后重新执行测试与 `quick_validate.py`。

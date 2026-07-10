@@ -1,0 +1,232 @@
+{
+  "title": "教育行业观察",
+  "period": "2026.06.22-2026.07.05",
+  "core_insights": [
+    {
+      "claim": "AI教育正在从单点工具进入课程、作业和校园服务流程",
+      "evidence_ids": ["E1", "E2", "E5"]
+    },
+    {
+      "claim": "政策与资本同时关注可量化的学校落地和付费闭环",
+      "evidence_ids": ["E2", "E3", "E4"]
+    }
+  ],
+  "sections": [
+    {
+      "name": "行业速览-融资与交易",
+      "items": [
+        {
+          "id": "E1",
+          "headline": "[测试样例] AI备考平台完成天使轮融资",
+          "short_title": "AI备考平台完成天使轮融资",
+          "event_date": "2026-06-24",
+          "subject": "测试教育科技公司甲",
+          "event_type": "融资",
+          "facts": [
+            "公司完成天使轮融资，资金用于产品研发和市场验证。",
+            "产品覆盖课程、刷题、答疑和报考信息，面向大学生考试场景。",
+            "公司披露模型已接入结构化题库和知识点数据。"
+          ],
+          "analysis": "该事件说明垂直教育模型的竞争重点正在从通用问答转向内容资产、学习流程和低成本交付。",
+          "beneficiaries": ["拥有题库和教研数据的教育企业", "可提供模型与算力服务的技术公司"],
+          "risks": ["获客成本高于订阅收入", "模型准确率无法稳定覆盖长尾考试"],
+          "tracking": "跟踪下一轮融资、付费用户数和单用户获客成本。",
+          "scores": {
+            "industry_impact": 4,
+            "policy_importance": 2,
+            "commercial_value": 5,
+            "technology_relevance": 5,
+            "investment_relevance": 5
+          },
+          "score_reasons": {
+            "industry_impact": "覆盖大学生考试的完整学习流程。",
+            "policy_importance": "与政策关系有限。",
+            "commercial_value": "订阅模式和降本逻辑明确。",
+            "technology_relevance": "垂直模型与题库结合。",
+            "investment_relevance": "已发生融资且商业指标可继续验证。"
+          },
+          "sources": [
+            {
+              "name": "测试公司公告",
+              "url": "https://example.com/education/e1",
+              "published_at": "2026-06-24",
+              "source_type": "company",
+              "is_primary": true
+            }
+          ]
+        },
+        {
+          "id": "E3",
+          "headline": "[测试样例] 教育上市公司收购校园服务企业",
+          "short_title": "上市公司收购校园服务企业",
+          "event_date": "2026-06-28",
+          "subject": "测试教育上市公司乙",
+          "event_type": "收购",
+          "facts": [
+            "上市公司公告收购校园服务企业控股权。",
+            "交易披露对价、支付方式和业绩承诺。",
+            "标的客户以基础教育学校为主。"
+          ],
+          "analysis": "交易把上市公司的教育服务入口从课程扩展到校园运营，有助于提高学校客户复购和交叉销售能力。",
+          "beneficiaries": ["学校数字化服务商", "拥有渠道的教育上市公司"],
+          "risks": ["标的整合不及预期", "学校预算周期拉长"],
+          "tracking": "跟踪交割进度、并表收入和业绩承诺完成率。",
+          "scores": {
+            "industry_impact": 4,
+            "policy_importance": 2,
+            "commercial_value": 5,
+            "technology_relevance": 3,
+            "investment_relevance": 5
+          },
+          "score_reasons": {
+            "industry_impact": "影响学校服务市场竞争格局。",
+            "policy_importance": "主要为市场化交易。",
+            "commercial_value": "存在明确并表和交叉销售逻辑。",
+            "technology_relevance": "涉及校园数字化但不是纯技术交易。",
+            "investment_relevance": "交易条款和上市公司影响可量化。"
+          },
+          "sources": [
+            {
+              "name": "测试交易所公告",
+              "url": "https://example.com/education/e3",
+              "published_at": "2026-06-28",
+              "source_type": "exchange",
+              "is_primary": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "行业速览-政策",
+      "items": [
+        {
+          "id": "E2",
+          "headline": "[测试样例] 地方发布人工智能赋能教育行动方案",
+          "short_title": "地方发布AI教育行动方案",
+          "event_date": "2026-06-26",
+          "subject": "测试省教育厅",
+          "event_type": "政策",
+          "facts": [
+            "行动方案明确中小学人工智能课程学时。",
+            "方案覆盖备课、课堂、作业和评价场景。",
+            "高校被要求建设人工智能通识课程和微专业。"
+          ],
+          "analysis": "地方政策开始给出课程、场景和实施主体，教育AI需求将从试点展示转向可采购、可验收的项目。",
+          "beneficiaries": ["课程内容提供商", "教学平台和评价产品企业"],
+          "risks": ["地方财政承压", "学校数据合规要求提高"],
+          "tracking": "跟踪项目预算、采购文件和首批试点学校名单。",
+          "scores": {
+            "industry_impact": 4,
+            "policy_importance": 5,
+            "commercial_value": 3,
+            "technology_relevance": 5,
+            "investment_relevance": 3
+          },
+          "score_reasons": {
+            "industry_impact": "覆盖多个教学环节。",
+            "policy_importance": "省级方案明确执行要求。",
+            "commercial_value": "采购空间待预算验证。",
+            "technology_relevance": "直接涉及教育AI应用。",
+            "investment_relevance": "可用于判断区域订单机会。"
+          },
+          "sources": [
+            {
+              "name": "测试省教育厅",
+              "url": "https://example.com/education/e2",
+              "published_at": "2026-06-26",
+              "source_type": "government",
+              "is_primary": true
+            }
+          ]
+        },
+        {
+          "id": "E4",
+          "headline": "[测试样例] 校外培训年检继续强化合规经营",
+          "short_title": "培训年检强化合规经营",
+          "event_date": "2026-07-01",
+          "subject": "测试市教育委员会",
+          "event_type": "监管",
+          "facts": [
+            "主管部门公布线上学科类机构年度检查结果。",
+            "年检覆盖资质、收费、培训行为和网络安全。",
+            "不合格机构将被要求整改或依法处置。"
+          ],
+          "analysis": "线上学科培训供给仍受牌照和年度检查约束，合规能力会继续决定机构能否稳定经营。",
+          "beneficiaries": ["合规经营的持牌机构", "合规技术服务商"],
+          "risks": ["续证不确定", "获客与收费规则继续收紧"],
+          "tracking": "跟踪机构续证、整改结果和后续行政处罚。",
+          "scores": {
+            "industry_impact": 4,
+            "policy_importance": 5,
+            "commercial_value": 3,
+            "technology_relevance": 2,
+            "investment_relevance": 3
+          },
+          "score_reasons": {
+            "industry_impact": "直接影响线上培训供给。",
+            "policy_importance": "年检结果决定续证。",
+            "commercial_value": "影响机构持续经营。",
+            "technology_relevance": "技术相关性较低。",
+            "investment_relevance": "可用于评估监管风险。"
+          },
+          "sources": [
+            {
+              "name": "测试市教育委员会",
+              "url": "https://example.com/education/e4",
+              "published_at": "2026-07-01",
+              "source_type": "government",
+              "is_primary": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "行业速览-AI教育",
+      "items": [
+        {
+          "id": "E5",
+          "headline": "[测试样例] 学校启动课堂智能评价平台采购",
+          "short_title": "学校采购课堂智能评价平台",
+          "event_date": "2026-07-03",
+          "subject": "测试学校集团",
+          "event_type": "采购",
+          "facts": [
+            "学校集团启动课堂智能评价平台采购。",
+            "采购范围包括课堂分析、学情报告和教师研修。",
+            "项目要求平台支持校级数据治理和权限管理。"
+          ],
+          "analysis": "学校采购从单一工具转向教学评价与教师发展闭环，能够接入教研流程的产品更容易形成续费。",
+          "beneficiaries": ["课堂分析平台", "教师研修服务商"],
+          "risks": ["数据采集合规", "教师使用率不足"],
+          "tracking": "跟踪中标金额、覆盖学校数和上线后的教师活跃度。",
+          "scores": {
+            "industry_impact": 4,
+            "policy_importance": 3,
+            "commercial_value": 4,
+            "technology_relevance": 4,
+            "investment_relevance": 3
+          },
+          "score_reasons": {
+            "industry_impact": "进入课堂和教研核心流程。",
+            "policy_importance": "符合教育数字化方向。",
+            "commercial_value": "存在采购和续费验证。",
+            "technology_relevance": "涉及课堂智能分析。",
+            "investment_relevance": "可验证B端商业化能力。"
+          },
+          "sources": [
+            {
+              "name": "测试采购公告",
+              "url": "https://example.com/education/e5",
+              "published_at": "2026-07-03",
+              "source_type": "procurement",
+              "is_primary": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "weekly_judgment": "本期样例显示，教育行业的重要变化不在于新增了多少AI工具，而在于产品是否进入课程、作业、评价和校园服务等可持续流程。政策侧开始给出课程与应用场景，资本和上市公司则更关注能够形成付费闭环的垂直数据与学校入口。下一期应重点验证地方预算、学校采购、产品使用率和交易并表效果，避免只依据发布会或概念宣传判断行业进展。"
+}

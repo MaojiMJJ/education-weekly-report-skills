@@ -1,0 +1,172 @@
+{
+  "title": "职教行业周报",
+  "period": "2026.06.15-2026.06.28",
+  "core_insights": [
+    {
+      "claim": "职业本科扩容正在与产业链专业调整同步推进",
+      "evidence_ids": ["V1", "V2", "V3"]
+    },
+    {
+      "claim": "企业参与职教的验证重点从签约转向投入、招生和就业结果",
+      "evidence_ids": ["V3", "V4", "V5"]
+    }
+  ],
+  "sections": [
+    {
+      "name": "职业教育-政策",
+      "items": [
+        {
+          "id": "V1",
+          "headline": "[测试样例] 省级方案明确职业教育新双高建设任务",
+          "short_title": "省级方案部署职教新双高",
+          "event_date": "2026-06-16",
+          "subject": "测试省教育厅",
+          "event_type": "政策",
+          "facts": [
+            "方案提出建设高水平高职学校和专业群。",
+            "专业布局要求对接先进制造和现代服务产业链。",
+            "方案明确年度申报、验收和动态调整机制。"
+          ],
+          "analysis": "政策把专业调整、产教融合和项目验收放在同一框架中，院校资源将进一步向能够证明产业适配度的专业群集中。",
+          "beneficiaries": ["高水平高职院校", "参与专业建设的产业企业"],
+          "risks": ["项目同质化", "验收指标偏重投入而非就业结果"],
+          "tracking": "跟踪首批学校名单、资金规模和年度验收指标。",
+          "scores": {"industry_impact": 5, "policy_importance": 5, "commercial_value": 3, "technology_relevance": 3, "investment_relevance": 3},
+          "score_reasons": {
+            "industry_impact": "影响省内院校和专业资源配置。",
+            "policy_importance": "省级方案包含申报和验收。",
+            "commercial_value": "将带动专业和实训项目需求。",
+            "technology_relevance": "涉及先进制造专业建设。",
+            "investment_relevance": "可跟踪财政和企业投入。"
+          },
+          "sources": [
+            {"name": "测试省教育厅", "url": "https://example.com/vocational/v1", "published_at": "2026-06-16", "source_type": "government", "is_primary": true}
+          ]
+        },
+        {
+          "id": "V2",
+          "headline": "[测试样例] 新设公办本科层次职业学校获批",
+          "short_title": "公办职业大学获批设立",
+          "event_date": "2026-06-18",
+          "subject": "测试职业大学",
+          "event_type": "院校设置",
+          "facts": [
+            "教育主管部门批准以现有高职院校为基础设立职业大学。",
+            "学校首批设置五个职业本科专业。",
+            "全日制在校生规模和管理体制已明确。"
+          ],
+          "analysis": "新增职业本科供给继续向区域产业急需专业集中，学校后续办学质量取决于本科师资、实训条件和企业岗位能否同步升级。",
+          "beneficiaries": ["区域产业技能人才培养", "职业本科教学服务商"],
+          "risks": ["本科师资不足", "专业升级快于岗位需求"],
+          "tracking": "跟踪首届招生计划、专业师资和校企实训投入。",
+          "scores": {"industry_impact": 5, "policy_importance": 5, "commercial_value": 3, "technology_relevance": 2, "investment_relevance": 3},
+          "score_reasons": {
+            "industry_impact": "新增职业本科供给。",
+            "policy_importance": "教育主管部门正式批准。",
+            "commercial_value": "带来本科专业建设需求。",
+            "technology_relevance": "技术相关性取决于专业设置。",
+            "investment_relevance": "可跟踪招生和建设投入。"
+          },
+          "sources": [
+            {"name": "测试省政府", "url": "https://example.com/vocational/v2", "published_at": "2026-06-18", "source_type": "government", "is_primary": true}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "职业教育-产教融合",
+      "items": [
+        {
+          "id": "V3",
+          "headline": "[测试样例] 职业院校与制造企业共建产业学院",
+          "short_title": "校企共建智能制造产业学院",
+          "event_date": "2026-06-21",
+          "subject": "测试职业学院与测试制造企业",
+          "event_type": "产业学院",
+          "facts": [
+            "校企双方签署产业学院共建协议。",
+            "合作覆盖课程、实训基地、师资和订单班。",
+            "首期招生规模、设备投入和岗位方向已披露。"
+          ],
+          "analysis": "该合作具备投入、招生和岗位三个可验证环节，比只有挂牌和签约的产业学院更接近真实人才培养与用工闭环。",
+          "beneficiaries": ["合作院校学生", "制造企业技能岗位"],
+          "risks": ["设备利用率不足", "订单班就业兑现率低"],
+          "tracking": "跟踪设备到位、首期招生和毕业生进入企业的比例。",
+          "scores": {"industry_impact": 4, "policy_importance": 3, "commercial_value": 5, "technology_relevance": 4, "investment_relevance": 3},
+          "score_reasons": {
+            "industry_impact": "覆盖区域制造人才培养。",
+            "policy_importance": "符合产教融合方向。",
+            "commercial_value": "投入和订单班规模明确。",
+            "technology_relevance": "对应智能制造实训。",
+            "investment_relevance": "可验证企业投入和就业结果。"
+          },
+          "sources": [
+            {"name": "测试职业学院", "url": "https://example.com/vocational/v3", "published_at": "2026-06-21", "source_type": "school", "is_primary": true}
+          ]
+        },
+        {
+          "id": "V4",
+          "headline": "[测试样例] 职教上市公司签订区域培训合作",
+          "short_title": "职教上市公司签培训合作",
+          "event_date": "2026-06-24",
+          "subject": "测试职教上市公司",
+          "event_type": "上市公司事项",
+          "facts": [
+            "上市公司公告与区域产业园签订技能培训合作。",
+            "合作明确培训对象、课程方向和年度人数。",
+            "公告披露合同金额及收入确认条件。"
+          ],
+          "analysis": "合作把职业培训需求与园区企业用工集中匹配，若学员交付和收入确认顺利，可形成可复制的区域B端业务。",
+          "beneficiaries": ["职教培训运营商", "园区企业"],
+          "risks": ["招生不足", "合同收入确认延后"],
+          "tracking": "跟踪实际培训人数、回款和收入确认进度。",
+          "scores": {"industry_impact": 4, "policy_importance": 3, "commercial_value": 5, "technology_relevance": 2, "investment_relevance": 5},
+          "score_reasons": {
+            "industry_impact": "形成区域培训供给。",
+            "policy_importance": "与就业培训政策相关。",
+            "commercial_value": "合同金额和人数明确。",
+            "technology_relevance": "技术相关性较低。",
+            "investment_relevance": "可量化上市公司收入影响。"
+          },
+          "sources": [
+            {"name": "测试交易所公告", "url": "https://example.com/vocational/v4", "published_at": "2026-06-24", "source_type": "exchange", "is_primary": true}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "职业教育-融资与交易",
+      "items": [
+        {
+          "id": "V5",
+          "headline": "[测试样例] 技能培训平台完成新一轮融资",
+          "short_title": "技能培训平台完成融资",
+          "event_date": "2026-06-27",
+          "subject": "测试技能培训公司",
+          "event_type": "融资",
+          "facts": [
+            "公司完成新一轮融资，金额和投资方已披露。",
+            "平台面向制造企业提供岗位技能培训和评价。",
+            "公司披露服务企业数、学员数和续费情况。"
+          ],
+          "analysis": "融资指向企业付费的岗位技能培训，行业价值取决于培训是否与岗位标准、评价证书和续费形成闭环。",
+          "beneficiaries": ["企业培训平台", "技能评价服务商"],
+          "risks": ["企业培训预算收缩", "证书与岗位需求脱节"],
+          "tracking": "跟踪融资后客户增长、续费率和单企业收入。",
+          "scores": {"industry_impact": 4, "policy_importance": 3, "commercial_value": 5, "technology_relevance": 3, "investment_relevance": 5},
+          "score_reasons": {
+            "industry_impact": "覆盖企业技能培训。",
+            "policy_importance": "符合终身技能培训方向。",
+            "commercial_value": "企业客户和续费可验证。",
+            "technology_relevance": "平台支持培训和评价。",
+            "investment_relevance": "融资和经营指标明确。"
+          },
+          "sources": [
+            {"name": "测试公司公告", "url": "https://example.com/vocational/v5", "published_at": "2026-06-27", "source_type": "company", "is_primary": true}
+          ]
+        }
+      ]
+    }
+  ],
+  "weekly_judgment": "本期样例显示，职业教育增量正在从政策目标转向可验收的学校、专业和企业项目。职业本科与新双高建设继续扩容，但项目价值取决于师资、实训、招生和就业能否同步落地。企业参与职教也不能只看签约数量，应持续验证真实投入、培训人数、岗位匹配、回款和续费。下一期重点跟踪首批项目名单、招生计划和企业合同兑现。"
+}

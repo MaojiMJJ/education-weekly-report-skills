@@ -1,4 +1,4 @@
 interface:
   display_name: "职教行业周报"
-  short_description: "生成中国职业教育行业双周报 PPT 和来源清单"
-  default_prompt: "Use $vocational-education-weekly-report 生成指定日期区间的职教行业周报，并附来源清单。"
+  short_description: "生成有评分、行业判断和来源核验的职教双周报"
+  default_prompt: "Use $vocational-education-weekly-report 研究指定日期区间的职业教育重要变化，先完成候选池、评分和事件研究卡，再生成职教行业周报 PPT 与来源清单；不满足出刊门槛时只交付检索底稿和缺口说明。"
