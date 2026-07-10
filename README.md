@@ -22,7 +22,7 @@
   -> 本期核心观点
   -> 周报 JSON
   -> 自动质量校验
-  -> 4:3 PPTX 与来源清单
+  -> 4:3 PPTX、来源清单与质量报告
   -> 全页渲染复核
 ```
 
@@ -32,7 +32,8 @@
 
 - 至少 5 个高价值正文事项。
 - 事项总分不低于 16；或行业影响不低于 4，且其他维度至少一项不低于 4。
-- 重大事项必须有一手来源。
+- 事项和至少一个直接来源必须处于报告期内，来源需记录访问核验状态和日期。
+- 政策、融资、交易、监管、院校设置和重大合作必须有一手来源。
 - 同一来源文件原则上只形成一个事项。
 - 检索结论、低价值名单、重复政策和活动宣传不能进入正文。
 - 40 分复核中任一维度低于 8 分或总分低于 32 分，不得出刊。
@@ -53,11 +54,13 @@
 ```powershell
 python skills/education-industry-observation/scripts/build_weekly_pptx.py report.json `
   --output 教育行业观察.pptx `
-  --sources-output 教育行业观察_来源清单.md
+  --sources-output 教育行业观察_来源清单.md `
+  --quality-output 教育行业观察_质量报告.md
 
 python skills/vocational-education-weekly-report/scripts/build_weekly_pptx.py report.json `
   --output 职教行业周报.pptx `
-  --sources-output 职教行业周报_来源清单.md
+  --sources-output 职教行业周报_来源清单.md `
+  --quality-output 职教行业周报_质量报告.md
 ```
 
 生成器会在写入 PPT 前执行质量校验，旧版新闻摘要 JSON 会被拒绝。
@@ -74,7 +77,7 @@ python C:\Users\maoji\.codex\skills\.system\skill-creator\scripts\quick_validate
   skills\vocational-education-weekly-report
 ```
 
-测试固定包含：0709 失败样例拒绝、合格研究结构放行、低分事项拒绝、重复来源拒绝、4:3 页面、证据表格和来源清单。
+测试固定包含：0709 失败样例拒绝、跨期事项拒绝、未核验来源拒绝、重大事项一手来源、低分事项拒绝、重复来源拒绝、文本容量、畸形表格、4:3 页面、来源清单和质量报告。
 
 ## 本地部署
 

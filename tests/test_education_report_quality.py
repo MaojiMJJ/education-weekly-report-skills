@@ -71,6 +71,109 @@ class EducationReportQualityTests(unittest.TestCase):
 
         self.assertIn("未达到入选阈值", str(caught.exception))
 
+    def test_rejects_internal_content_role(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        report["sections"][0]["name"] = "搜索情况"
+        report["sections"][0]["items"][0]["content_role"] = "search_ledger"
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("content_role", str(caught.exception))
+
+    def test_rejects_event_outside_report_period(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        report["sections"][0]["items"][0]["event_date"] = "2026-05-01"
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("不在报告期", str(caught.exception))
+
+    def test_rejects_unverified_source(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        report["sections"][0]["items"][0]["sources"][0]["access_status"] = "unchecked"
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("access_status", str(caught.exception))
+
+    def test_financing_requires_primary_source(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        report["sections"][0]["items"][0]["sources"][0]["is_primary"] = False
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("一手来源", str(caught.exception))
+
+    def test_rejects_extra_score_field(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        report["sections"][0]["items"][0]["scores"]["total"] = 99
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("额外字段", str(caught.exception))
+
+    def test_rejects_malformed_evidence_table(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        report["sections"][0]["items"][0]["evidence_table"] = "不是对象"
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("evidence_table", str(caught.exception))
+
+    def test_rejects_overlong_fact(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        report["sections"][0]["items"][0]["facts"][0] = "过长事实" * 50
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("facts[1]", str(caught.exception))
+
+    def test_rejects_overlong_impact_lists(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        item = report["sections"][0]["items"][0]
+        item["beneficiaries"] = ["受益机制描述" * 5] * 3
+        item["risks"] = ["风险条件描述" * 5] * 3
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("受益方和风险", str(caught.exception))
+
+    def test_requires_background(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        report["sections"][0]["items"][0].pop("background")
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("background", str(caught.exception))
+
+    def test_rejects_quality_review_below_eight(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        report["quality_review"]["analysis_depth"]["score"] = 7
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("quality_review.analysis_depth", str(caught.exception))
+
     def test_rejects_duplicate_source_document(self):
         quality = load_quality_module()
         report = load_fixture("education_valid.json")
@@ -91,6 +194,15 @@ class EducationReportQualityTests(unittest.TestCase):
         self.assertIn("# 教育行业观察来源清单", markdown)
         self.assertIn("E1", markdown)
         self.assertIn("https://example.com/education/e1", markdown)
+
+    def test_builds_quality_markdown(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+
+        markdown = quality.build_quality_markdown(report)
+
+        self.assertIn("# 教育行业观察质量报告", markdown)
+        self.assertIn("总分：34/40", markdown)
 
 
 if __name__ == "__main__":

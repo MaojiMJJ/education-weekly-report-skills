@@ -27,11 +27,13 @@
       "items": [
         {
           "id": "E1",
+          "content_role": "event",
           "headline": "完整事件标题",
           "short_title": "左侧短标题",
           "event_date": "2026-06-24",
           "subject": "事项主体",
           "event_type": "融资",
+          "background": "20-140字主体背景，说明业务、客户、历史和本次事项的上下文。",
           "facts": ["事实一", "事实二", "事实三"],
           "analysis": "说明事件改变的行业变量、趋势和影响机制。",
           "beneficiaries": ["受益方及机制"],
@@ -57,7 +59,9 @@
               "url": "https://example.com/source",
               "published_at": "2026-06-24",
               "source_type": "company",
-              "is_primary": true
+              "is_primary": true,
+              "access_status": "verified",
+              "access_checked_at": "2026-07-05"
             }
           ],
           "evidence_table": {
@@ -68,7 +72,13 @@
       ]
     }
   ],
-  "weekly_judgment": "100-200字行业判断。"
+  "weekly_judgment": "100-200字行业判断。",
+  "quality_review": {
+    "information_quality": {"score": 8, "reason": "不少于10字的复核理由。"},
+    "analysis_depth": {"score": 8, "reason": "不少于10字的复核理由。"},
+    "readability": {"score": 8, "reason": "不少于10字的复核理由。"},
+    "strategic_value": {"score": 8, "reason": "不少于10字的复核理由。"}
+  }
 }
 ```
 
@@ -78,6 +88,8 @@
 
 - `core_insights` 生成本期核心观点页。
 - 每个 `item` 生成 1 个事件页。
-- `facts` 进入事实区，`analysis` 进入行业判断框，`tracking` 进入后续跟踪框。
+- `subject`、`event_date` 和 `event_type` 进入元数据行，`background` 进入主体背景区。
+- `facts` 进入事实区，`analysis`、`beneficiaries` 和 `risks` 进入行业判断框，`tracking` 进入后续跟踪框。
 - `sources` 在页脚显示来源名和日期，完整 URL 进入独立来源清单。
 - `weekly_judgment` 生成结尾页。
+- `quality_review` 生成独立质量报告；任一得分低于 8 或总分低于 32 时拒绝生成。

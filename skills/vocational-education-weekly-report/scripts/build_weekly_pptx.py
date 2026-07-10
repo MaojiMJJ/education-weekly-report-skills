@@ -20,7 +20,13 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from report_quality import build_sources_markdown, iter_events, validate_report
+from report_quality import (
+    SCORE_FIELDS,
+    build_quality_markdown,
+    build_sources_markdown,
+    iter_events,
+    validate_report,
+)
 
 
 FONT = "Microsoft YaHei"
@@ -148,7 +154,17 @@ def add_insights_slide(prs: Presentation, report: dict[str, Any]):
 def add_analysis_box(slide, item, x, y, w, h):
     add_rect(slide, x, y, w, h, fill=VERY_PALE_GREEN, line=LINE)
     add_textbox(slide, x + 0.12, y + 0.08, 1.05, 0.28, "行业判断", 11, True, GREEN)
-    add_textbox(slide, x + 1.05, y + 0.06, w - 1.18, h - 0.12, item["analysis"], 11.5, False, INK, valign=MSO_ANCHOR.MIDDLE)
+    add_textbox(slide, x + 1.05, y + 0.05, w - 1.18, h - 0.42, item["analysis"], 10.5, False, INK, valign=MSO_ANCHOR.MIDDLE)
+    impact = "受益：{}  ｜  风险：{}".format(
+        "、".join(item["beneficiaries"]),
+        "、".join(item["risks"]),
+    )
+    add_textbox(slide, x + 1.05, y + h - 0.35, w - 1.18, 0.28, impact, 8.8, False, MUTED, valign=MSO_ANCHOR.MIDDLE)
+
+
+def add_background_box(slide, item, x, y, w, h):
+    add_textbox(slide, x, y, 0.9, h, "主体背景", 9.5, True, GREEN, valign=MSO_ANCHOR.MIDDLE)
+    add_textbox(slide, x + 0.86, y, w - 0.86, h, item["background"], 9.5, False, MUTED, valign=MSO_ANCHOR.MIDDLE)
 
 
 def add_tracking_box(slide, item, x, y, w, h):
@@ -178,7 +194,7 @@ def add_evidence_table(slide, evidence, x, y, w, h):
             cell.text = str(row[col_index]) if col_index < len(row) else ""
             cell.fill.solid()
             cell.fill.fore_color.rgb = WHITE
-    for row in table.rows:
+    for row_index, row in enumerate(table.rows):
         for cell in row.cells:
             cell.margin_left = Inches(0.04)
             cell.margin_right = Inches(0.04)
@@ -189,7 +205,7 @@ def add_evidence_table(slide, evidence, x, y, w, h):
                 paragraph.font.name = FONT
                 paragraph.font.size = Pt(9.5)
                 paragraph.font.color.rgb = INK
-                if row is table.rows[0]:
+                if row_index == 0:
                     paragraph.font.bold = True
 
 
@@ -216,20 +232,25 @@ def add_item_slide(prs: Presentation, section_name: str, item: dict[str, Any], n
     )
     add_rect(slide, 1.62, 1.02, 7.96, 5.92, fill=WHITE, line=LINE)
 
+    metadata = f"主体：{item['subject']}  ｜  日期：{item['event_date']}  ｜  类型：{item['event_type']}"
+    add_textbox(slide, 1.85, 1.12, 7.45, 0.28, metadata, 9.5, True, GREEN, valign=MSO_ANCHOR.MIDDLE)
+
     evidence = item.get("evidence_table")
     if evidence:
-        add_bullets(slide, 1.85, 1.2, 7.48, 1.45, item["facts"][:3], 11.5, 3)
-        add_evidence_table(slide, evidence, 2.0, 2.7, 7.15, 1.65)
-        add_analysis_box(slide, item, 1.86, 4.55, 7.45, 1.0)
-        add_tracking_box(slide, item, 1.86, 5.75, 7.45, 0.62)
+        add_bullets(slide, 1.85, 1.48, 7.48, 0.96, item["facts"][:3], 10.5, 2)
+        add_background_box(slide, item, 1.9, 2.5, 7.35, 0.42)
+        add_evidence_table(slide, evidence, 2.0, 3.0, 7.15, 1.2)
+        add_analysis_box(slide, item, 1.86, 4.38, 7.45, 1.18)
+        add_tracking_box(slide, item, 1.86, 5.76, 7.45, 0.62)
     else:
-        add_bullets(slide, 1.85, 1.23, 7.46, 3.02, item["facts"], 13.0, 6)
-        add_analysis_box(slide, item, 1.86, 4.42, 7.45, 1.12)
+        add_bullets(slide, 1.85, 1.5, 7.46, 2.12, item["facts"], 11.8, 5)
+        add_background_box(slide, item, 1.9, 3.73, 7.35, 0.48)
+        add_analysis_box(slide, item, 1.86, 4.38, 7.45, 1.18)
         add_tracking_box(slide, item, 1.86, 5.76, 7.45, 0.62)
 
     source = source_footer(item)
     add_textbox(slide, 0.5, 7.05, 7.5, 0.24, f"来源：{source}", 8.5, False, MUTED, valign=MSO_ANCHOR.MIDDLE)
-    score = sum(item["scores"].values())
+    score = sum(item["scores"][field] for field in SCORE_FIELDS)
     add_textbox(slide, 8.15, 7.05, 1.28, 0.24, f"价值评分 {score}/25", 8.5, True, GREEN, align=PP_ALIGN.RIGHT, valign=MSO_ANCHOR.MIDDLE)
 
 
@@ -250,7 +271,12 @@ def add_summary_slide(prs: Presentation, report: dict[str, Any]):
     add_bullets(slide, 0.9, 4.58, 8.1, 1.78, tracking, 13.5, 8)
 
 
-def build(report: dict[str, Any], output: Path, sources_output: Path | None = None) -> None:
+def build(
+    report: dict[str, Any],
+    output: Path,
+    sources_output: Path | None = None,
+    quality_output: Path | None = None,
+) -> None:
     validate_report(report)
     presentation = Presentation()
     presentation.slide_width = Inches(10)
@@ -273,6 +299,11 @@ def build(report: dict[str, Any], output: Path, sources_output: Path | None = No
         sources_output.parent.mkdir(parents=True, exist_ok=True)
         sources_output.write_text(build_sources_markdown(report), encoding="utf-8")
 
+    if quality_output:
+        quality_output = Path(quality_output)
+        quality_output.parent.mkdir(parents=True, exist_ok=True)
+        quality_output.write_text(build_quality_markdown(report), encoding="utf-8")
+
 
 def self_test_spec() -> dict[str, Any]:
     items = []
@@ -280,11 +311,13 @@ def self_test_spec() -> dict[str, Any]:
         items.append(
             {
                 "id": f"T{index}",
+                "content_role": "event",
                 "headline": f"[自检样例] 职业教育行业事项 {index}",
                 "short_title": f"自检事项 {index}",
                 "event_date": f"2026-07-0{index}",
                 "subject": f"自检主体 {index}",
                 "event_type": "产业学院" if index % 2 else "政策",
+                "background": "该主体已具备职业教育办学、企业合作或政策执行基础，本事项用于验证研究字段和版式容量。",
                 "facts": [
                     "该事项披露了明确的主体、时间和新增动作。",
                     "公开材料提供了产品、客户或政策执行信息。",
@@ -315,6 +348,8 @@ def self_test_spec() -> dict[str, Any]:
                         "published_at": f"2026-07-0{index}",
                         "source_type": "test",
                         "is_primary": True,
+                        "access_status": "verified",
+                        "access_checked_at": "2026-07-05",
                     }
                 ],
             }
@@ -334,6 +369,12 @@ def self_test_spec() -> dict[str, Any]:
             {"name": "职业教育-院校", "items": items[4:]},
         ],
         "weekly_judgment": "本自检样例用于确认职教周报生成器只接受完整的研究结构。每个事项均包含事实、行业解释、受益方、风险和后续验证问题，核心观点能够回指具体事项，最终报告也会单独形成行业判断页和来源清单，从而避免把检索过程、空结果或低价值信息放入正式正文。",
+        "quality_review": {
+            "information_quality": {"score": 8, "reason": "职教自检事项均包含日期、主体、来源和事实字段。"},
+            "analysis_depth": {"score": 8, "reason": "职教事项包含判断、受益方、风险和跟踪问题。"},
+            "readability": {"score": 8, "reason": "自检页面使用固定结构并限制文本容量。"},
+            "strategic_value": {"score": 8, "reason": "自检内容可以形成下一期量化验证任务。"},
+        },
     }
 
 
@@ -342,6 +383,7 @@ def main() -> None:
     parser.add_argument("input_json", nargs="?", help="报告 JSON 文件路径")
     parser.add_argument("--output", required=True, help="输出 PPTX 路径")
     parser.add_argument("--sources-output", help="输出 Markdown 来源清单路径")
+    parser.add_argument("--quality-output", help="输出 Markdown 质量报告路径")
     parser.add_argument("--self-test", action="store_true", help="使用内置自检数据")
     args = parser.parse_args()
 
@@ -352,10 +394,17 @@ def main() -> None:
             raise SystemExit("未使用 --self-test 时必须提供 input_json")
         report = json.loads(Path(args.input_json).read_text(encoding="utf-8"))
 
-    build(report, Path(args.output), Path(args.sources_output) if args.sources_output else None)
+    build(
+        report,
+        Path(args.output),
+        Path(args.sources_output) if args.sources_output else None,
+        Path(args.quality_output) if args.quality_output else None,
+    )
     print(f"已写入 {args.output}")
     if args.sources_output:
         print(f"已写入 {args.sources_output}")
+    if args.quality_output:
+        print(f"已写入 {args.quality_output}")
 
 
 if __name__ == "__main__":

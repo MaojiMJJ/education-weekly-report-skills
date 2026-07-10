@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""校验教育行业研究周报的结构、价值和来源质量。"""
+"""校验教育行业研究周报的结构、价值、来源和页面容量。"""
 
 from __future__ import annotations
 
 import math
 import re
 from collections import Counter
+from datetime import date
 from urllib.parse import urlsplit, urlunsplit
 
 
@@ -17,17 +18,53 @@ SCORE_FIELDS = (
     "investment_relevance",
 )
 
-PRIMARY_REQUIRED_TYPES = {
+QUALITY_DIMENSIONS = (
+    "information_quality",
+    "analysis_depth",
+    "readability",
+    "strategic_value",
+)
+
+QUALITY_LABELS = {
+    "information_quality": "信息质量",
+    "analysis_depth": "分析深度",
+    "readability": "可读性",
+    "strategic_value": "战略价值",
+}
+
+INTERNAL_MARKERS = (
+    "检索结论",
+    "未检索到",
+    "搜索情况",
+    "检索情况",
+    "来源不足",
+    "缺口说明",
+    "候选池",
+    "工作底稿",
+)
+
+PRIMARY_REQUIRED_TOKENS = (
     "政策",
     "监管",
     "收购",
+    "并购",
     "再融资",
     "非公开发行",
-    "上市公司事项",
+    "交易",
+    "融资",
+    "上市公司",
     "院校设置",
-}
+    "升本",
+    "学校设置",
+    "合作",
+    "采购",
+    "中标",
+)
 
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+PERIOD_PATTERN = re.compile(
+    r"^(\d{4})[.-](\d{2})[.-](\d{2})\s*-\s*(\d{4})[.-](\d{2})[.-](\d{2})$"
+)
 
 
 class ReportQualityError(ValueError):
@@ -42,6 +79,30 @@ def _is_text(value, minimum=1):
     return isinstance(value, str) and len(value.strip()) >= minimum
 
 
+def _parse_iso_date(value):
+    if not _is_text(value) or not DATE_PATTERN.fullmatch(value.strip()):
+        return None
+    try:
+        return date.fromisoformat(value.strip())
+    except ValueError:
+        return None
+
+
+def _parse_period(value):
+    if not _is_text(value):
+        return None
+    match = PERIOD_PATTERN.fullmatch(value.strip())
+    if not match:
+        return None
+    numbers = [int(part) for part in match.groups()]
+    try:
+        start = date(numbers[0], numbers[1], numbers[2])
+        end = date(numbers[3], numbers[4], numbers[5])
+    except ValueError:
+        return None
+    return (start, end) if start <= end else None
+
+
 def _normalise_url(url):
     parts = urlsplit(url.strip())
     return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), parts.path.rstrip("/"), "", ""))
@@ -54,6 +115,14 @@ def _valid_url(url):
     return parts.scheme in {"http", "https"} and bool(parts.netloc)
 
 
+def _check_text(issues, label, value, minimum=1, maximum=None):
+    if not _is_text(value, minimum):
+        issues.append(f"{label} 至少需要 {minimum} 字")
+        return
+    if maximum is not None and len(value.strip()) > maximum:
+        issues.append(f"{label} 不得超过 {maximum} 字")
+
+
 def iter_events(report):
     for section in report.get("sections") or []:
         section_name = section.get("name", "") if isinstance(section, dict) else ""
@@ -62,7 +131,7 @@ def iter_events(report):
             yield section_name, item
 
 
-def _validate_list(issues, item_id, field, value, minimum, maximum=None):
+def _validate_list(issues, item_id, field, value, minimum, maximum=None, max_chars=None):
     if not isinstance(value, list) or len(value) < minimum:
         issues.append(f"事项 {item_id} 的 {field} 至少需要 {minimum} 项")
         return
@@ -71,6 +140,42 @@ def _validate_list(issues, item_id, field, value, minimum, maximum=None):
     for index, entry in enumerate(value, 1):
         if not _is_text(entry):
             issues.append(f"事项 {item_id} 的 {field}[{index}] 不能为空")
+        elif max_chars is not None and len(entry.strip()) > max_chars:
+            issues.append(f"事项 {item_id} 的 {field}[{index}] 不得超过 {max_chars} 字")
+
+
+def _validate_evidence_table(issues, item_id, evidence):
+    if evidence is None:
+        return
+    if not isinstance(evidence, dict):
+        issues.append(f"事项 {item_id} 的 evidence_table 必须是对象")
+        return
+
+    columns = evidence.get("columns")
+    rows = evidence.get("rows")
+    if not isinstance(columns, list) or not 2 <= len(columns) <= 5:
+        issues.append(f"事项 {item_id} 的 evidence_table.columns 必须包含 2-5 列")
+        return
+    for index, column in enumerate(columns, 1):
+        if not _is_text(column) or len(column.strip()) > 20:
+            issues.append(f"事项 {item_id} 的 evidence_table.columns[{index}] 必须为 1-20 字文本")
+
+    if not isinstance(rows, list) or not 1 <= len(rows) <= 8:
+        issues.append(f"事项 {item_id} 的 evidence_table.rows 必须包含 1-8 行")
+        return
+    for row_index, row in enumerate(rows, 1):
+        if not isinstance(row, list) or len(row) != len(columns):
+            issues.append(f"事项 {item_id} 的 evidence_table.rows[{row_index}] 列数必须与表头一致")
+            continue
+        for column_index, cell in enumerate(row, 1):
+            if not isinstance(cell, (str, int, float)) or isinstance(cell, bool):
+                issues.append(f"事项 {item_id} 的 evidence_table.rows[{row_index}][{column_index}] 类型不支持")
+            elif len(str(cell)) > 30:
+                issues.append(f"事项 {item_id} 的 evidence_table.rows[{row_index}][{column_index}] 不得超过 30 字")
+
+
+def _requires_primary_source(event_type):
+    return any(token in event_type for token in PRIMARY_REQUIRED_TOKENS)
 
 
 def validate_report(report):
@@ -80,9 +185,11 @@ def validate_report(report):
     if not isinstance(report, dict):
         raise ReportQualityError(["报告根节点必须是对象"])
 
-    for field in ("title", "period"):
-        if not _is_text(report.get(field)):
-            issues.append(f"报告必须包含 {field}")
+    _check_text(issues, "title", report.get("title"), 2, 30)
+    period = _parse_period(report.get("period"))
+    if not period:
+        issues.append("period 必须使用 YYYY.MM.DD-YYYY.MM.DD 且起止日期有效")
+    period_start, period_end = period if period else (None, None)
 
     sections = report.get("sections")
     if not isinstance(sections, list) or not sections:
@@ -107,24 +214,41 @@ def validate_report(report):
         ids.append(item.get("id"))
         section_counts[section_name] += 1
 
-        if "检索结论" in section_name or "未检索到" in str(item.get("headline", "")):
-            issues.append(f"事项 {item_id} 属于检索结论，只能进入底稿，不能进入 PPT 正文")
+        if item.get("content_role") != "event":
+            issues.append(f"事项 {item_id} 的 content_role 必须是 event")
+        searchable_text = f"{section_name} {item.get('headline', '')}"
+        for marker in INTERNAL_MARKERS:
+            if marker in searchable_text:
+                issues.append(f"事项 {item_id} 包含内部工作内容“{marker}”，不能进入 PPT 正文")
+                break
 
-        for field in ("id", "headline", "short_title", "event_date", "subject", "event_type"):
-            if not _is_text(item.get(field)):
-                issues.append(f"事项 {item_id} 必须包含 {field}")
+        _check_text(issues, f"事项 {item_id} 的 id", item.get("id"), 1, 20)
+        _check_text(issues, f"事项 {item_id} 的 headline", item.get("headline"), 8, 70)
+        _check_text(issues, f"事项 {item_id} 的 short_title", item.get("short_title"), 4, 28)
+        _check_text(issues, f"事项 {item_id} 的 subject", item.get("subject"), 2, 80)
+        _check_text(issues, f"事项 {item_id} 的 event_type", item.get("event_type"), 2, 20)
+        _check_text(issues, f"事项 {item_id} 的 background", item.get("background"), 20, 140)
 
-        event_date = item.get("event_date")
-        if _is_text(event_date) and not DATE_PATTERN.fullmatch(event_date.strip()):
-            issues.append(f"事项 {item_id} 的 event_date 必须使用 YYYY-MM-DD")
+        event_date = _parse_iso_date(item.get("event_date"))
+        if not event_date:
+            issues.append(f"事项 {item_id} 的 event_date 必须使用有效的 YYYY-MM-DD")
+        elif period and not period_start <= event_date <= period_end:
+            issues.append(f"事项 {item_id} 的 event_date 不在报告期内")
 
-        _validate_list(issues, item_id, "facts", item.get("facts"), 3, 5)
-        if not _is_text(item.get("analysis"), 20):
-            issues.append(f"事项 {item_id} 必须包含不少于 20 字的 analysis")
-        _validate_list(issues, item_id, "beneficiaries", item.get("beneficiaries"), 1, 3)
-        _validate_list(issues, item_id, "risks", item.get("risks"), 1, 3)
-        if not _is_text(item.get("tracking"), 10):
-            issues.append(f"事项 {item_id} 必须包含不少于 10 字的 tracking")
+        facts = item.get("facts")
+        _validate_list(issues, item_id, "facts", facts, 3, 5, 140)
+        if isinstance(facts, list) and sum(len(str(value)) for value in facts) > 360:
+            issues.append(f"事项 {item_id} 的 facts 总长度不得超过 360 字")
+        _check_text(issues, f"事项 {item_id} 的 analysis", item.get("analysis"), 20, 160)
+        beneficiaries = item.get("beneficiaries")
+        risks = item.get("risks")
+        _validate_list(issues, item_id, "beneficiaries", beneficiaries, 1, 3, 45)
+        _validate_list(issues, item_id, "risks", risks, 1, 3, 45)
+        if isinstance(beneficiaries, list) and isinstance(risks, list):
+            impact_length = sum(len(str(value)) for value in beneficiaries + risks)
+            if impact_length > 120:
+                issues.append(f"事项 {item_id} 的受益方和风险合计不得超过 120 字")
+        _check_text(issues, f"事项 {item_id} 的 tracking", item.get("tracking"), 10, 70)
 
         scores = item.get("scores")
         score_reasons = item.get("score_reasons")
@@ -132,6 +256,12 @@ def validate_report(report):
         if not isinstance(scores, dict):
             issues.append(f"事项 {item_id} 必须包含 scores")
         else:
+            unexpected = set(scores) - set(SCORE_FIELDS)
+            missing = set(SCORE_FIELDS) - set(scores)
+            if unexpected:
+                issues.append(f"事项 {item_id} 的 scores 包含额外字段：{', '.join(sorted(unexpected))}")
+            if missing:
+                issues.append(f"事项 {item_id} 的 scores 缺少字段：{', '.join(sorted(missing))}")
             for field in SCORE_FIELDS:
                 value = scores.get(field)
                 if not isinstance(value, int) or isinstance(value, bool) or not 1 <= value <= 5:
@@ -143,8 +273,7 @@ def validate_report(report):
             issues.append(f"事项 {item_id} 必须包含 score_reasons")
         else:
             for field in SCORE_FIELDS:
-                if not _is_text(score_reasons.get(field), 5):
-                    issues.append(f"事项 {item_id} 必须说明 score_reasons.{field}")
+                _check_text(issues, f"事项 {item_id} 的 score_reasons.{field}", score_reasons.get(field), 5, 80)
 
         if len(score_values) == len(SCORE_FIELDS):
             total = sum(score_values)
@@ -155,25 +284,44 @@ def validate_report(report):
             if total < 16 and not high_impact_exception:
                 issues.append(f"事项 {item_id} 总分 {total}，未达到入选阈值")
 
+        _validate_evidence_table(issues, item_id, item.get("evidence_table"))
+
         sources = item.get("sources")
         if not isinstance(sources, list) or not sources:
             issues.append(f"事项 {item_id} 必须包含 sources")
             sources = []
+        elif len(sources) > 3:
+            issues.append(f"事项 {item_id} 的 sources 最多保留 3 个直接来源")
 
         has_primary = False
+        has_period_source = False
+        footer_length = 0
         for source_number, source in enumerate(sources, 1):
             if not isinstance(source, dict):
                 issues.append(f"事项 {item_id} 的 sources[{source_number}] 必须是对象")
                 continue
-            for field in ("name", "url", "published_at", "source_type"):
-                if not _is_text(source.get(field)):
-                    issues.append(f"事项 {item_id} 的来源必须包含 {field}")
+
+            _check_text(issues, f"事项 {item_id} 的来源 name", source.get("name"), 2, 60)
+            _check_text(issues, f"事项 {item_id} 的来源 source_type", source.get("source_type"), 2, 30)
+            footer_length += len(str(source.get("name", ""))) + len(str(source.get("published_at", "")))
+
             url = source.get("url", "")
-            if _is_text(url) and not _valid_url(url):
-                issues.append(f"事项 {item_id} 的来源 URL 必须是可访问格式的 http/https 地址")
-            published_at = source.get("published_at", "")
-            if _is_text(published_at) and not DATE_PATTERN.fullmatch(published_at.strip()):
-                issues.append(f"事项 {item_id} 的来源日期必须使用 YYYY-MM-DD")
+            if not _valid_url(url):
+                issues.append(f"事项 {item_id} 的来源 URL 必须是有效的 http/https 地址")
+            elif len(url) > 500:
+                issues.append(f"事项 {item_id} 的来源 URL 不得超过 500 字符")
+
+            published_at = _parse_iso_date(source.get("published_at"))
+            if not published_at:
+                issues.append(f"事项 {item_id} 的来源日期必须使用有效的 YYYY-MM-DD")
+            elif period and period_start <= published_at <= period_end:
+                has_period_source = True
+
+            if source.get("access_status") != "verified":
+                issues.append(f"事项 {item_id} 的来源 access_status 必须是 verified")
+            if not _parse_iso_date(source.get("access_checked_at")):
+                issues.append(f"事项 {item_id} 的来源 access_checked_at 必须使用有效的 YYYY-MM-DD")
+
             if not isinstance(source.get("is_primary"), bool):
                 issues.append(f"事项 {item_id} 的来源必须声明 is_primary")
             elif source["is_primary"]:
@@ -187,7 +335,12 @@ def validate_report(report):
                 else:
                     source_documents[document_key] = item_id
 
-        if item.get("event_type") in PRIMARY_REQUIRED_TYPES and sources and not has_primary:
+        if sources and not has_period_source:
+            issues.append(f"事项 {item_id} 至少需要 1 个发布日期在报告期内的直接来源")
+        if footer_length > 110:
+            issues.append(f"事项 {item_id} 的来源名称过长，页脚无法稳定展示")
+        event_type = str(item.get("event_type", ""))
+        if _requires_primary_source(event_type) and sources and not has_primary:
             issues.append(f"事项 {item_id} 属于重大事项，至少需要 1 个一手来源")
 
     clean_ids = [item_id for item_id in ids if _is_text(item_id)]
@@ -209,8 +362,7 @@ def validate_report(report):
         if not isinstance(insight, dict):
             issues.append(f"core_insights[{index}] 必须是对象")
             continue
-        if not _is_text(insight.get("claim"), 12):
-            issues.append(f"core_insights[{index}] 必须包含明确 claim")
+        _check_text(issues, f"core_insights[{index}].claim", insight.get("claim"), 12, 70)
         evidence_ids = insight.get("evidence_ids")
         if not isinstance(evidence_ids, list) or len(set(evidence_ids)) < 2:
             issues.append(f"core_insights[{index}] 至少需要 2 个 evidence_ids")
@@ -219,11 +371,28 @@ def validate_report(report):
             if unknown:
                 issues.append(f"core_insights[{index}] 引用了不存在的事项：{', '.join(sorted(unknown))}")
 
-    weekly_judgment = report.get("weekly_judgment")
-    if not _is_text(weekly_judgment, 100):
-        issues.append("报告必须包含 100-200 字的 weekly_judgment")
-    elif len(weekly_judgment.strip()) > 200:
-        issues.append("weekly_judgment 不得超过 200 字")
+    _check_text(issues, "weekly_judgment", report.get("weekly_judgment"), 100, 200)
+
+    quality_review = report.get("quality_review")
+    quality_scores = []
+    if not isinstance(quality_review, dict):
+        issues.append("报告必须包含 quality_review")
+    else:
+        for dimension in QUALITY_DIMENSIONS:
+            review = quality_review.get(dimension)
+            if not isinstance(review, dict):
+                issues.append(f"quality_review.{dimension} 必须是对象")
+                continue
+            score = review.get("score")
+            if not isinstance(score, int) or isinstance(score, bool) or not 1 <= score <= 10:
+                issues.append(f"quality_review.{dimension}.score 必须是 1-10 的整数")
+            else:
+                quality_scores.append(score)
+                if score < 8:
+                    issues.append(f"quality_review.{dimension} 低于 8 分，必须返工")
+            _check_text(issues, f"quality_review.{dimension}.reason", review.get("reason"), 10, 120)
+    if len(quality_scores) == len(QUALITY_DIMENSIONS) and sum(quality_scores) < 32:
+        issues.append("quality_review 总分低于 32 分，必须返工")
 
     if issues:
         raise ReportQualityError(issues)
@@ -233,6 +402,7 @@ def validate_report(report):
         "minimum_score": min(score_totals),
         "maximum_score": max(score_totals),
         "insight_count": len(insights),
+        "quality_total": sum(quality_scores),
     }
 
 
@@ -248,20 +418,44 @@ def build_sources_markdown(report):
         "",
         f"报告期：{report.get('period', '')}",
         "",
-        "| 事项ID | 事项 | 来源 | 日期 | 类型 | 一手来源 | URL |",
-        "| --- | --- | --- | --- | --- | --- | --- |",
+        "| 事项ID | 事项 | 来源 | 日期 | 类型 | 一手来源 | 访问核验 | URL |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for _section_name, item in iter_events(report):
         for source in item.get("sources") or []:
             lines.append(
-                "| {id} | {headline} | {name} | {date} | {kind} | {primary} | {url} |".format(
+                "| {id} | {headline} | {name} | {date} | {kind} | {primary} | {checked} | {url} |".format(
                     id=_escape_table(item.get("id", "")),
                     headline=_escape_table(item.get("headline", "")),
                     name=_escape_table(source.get("name", "")),
                     date=_escape_table(source.get("published_at", "")),
                     kind=_escape_table(source.get("source_type", "")),
                     primary="是" if source.get("is_primary") else "否",
+                    checked=_escape_table(source.get("access_checked_at", "")),
                     url=_escape_table(source.get("url", "")),
                 )
             )
     return "\n".join(lines) + "\n"
+
+
+def build_quality_markdown(report):
+    """生成可审计的 40 分质量报告。"""
+
+    review = report.get("quality_review") or {}
+    total = sum((review.get(dimension) or {}).get("score", 0) for dimension in QUALITY_DIMENSIONS)
+    lines = [
+        f"# {report.get('title', '报告')}质量报告",
+        "",
+        f"报告期：{report.get('period', '')}",
+        f"总分：{total}/40",
+        "",
+        "| 维度 | 得分 | 复核理由 |",
+        "| --- | ---: | --- |",
+    ]
+    for dimension in QUALITY_DIMENSIONS:
+        item = review.get(dimension) or {}
+        lines.append(
+            f"| {QUALITY_LABELS[dimension]} | {item.get('score', '')}/10 | {_escape_table(item.get('reason', ''))} |"
+        )
+    lines.extend(["", "结论：通过自动门槛；仍需完成全页渲染复核。", ""])
+    return "\n".join(lines)

@@ -37,8 +37,9 @@ class VocationalPptxBuilderTests(unittest.TestCase):
     def setUp(self):
         self.output = OUTPUT_DIR / "vocational_valid.pptx"
         self.sources = OUTPUT_DIR / "vocational_sources.md"
+        self.quality = OUTPUT_DIR / "vocational_quality.md"
         self.rejected_output = OUTPUT_DIR / "vocational_should_not_exist.pptx"
-        for path in (self.output, self.sources, self.rejected_output):
+        for path in (self.output, self.sources, self.quality, self.rejected_output):
             if path.exists():
                 path.unlink()
 
@@ -50,10 +51,11 @@ class VocationalPptxBuilderTests(unittest.TestCase):
             "rows": [["智能制造", "120人"], ["现代物流", "100人"]],
         }
 
-        builder.build(report, self.output, self.sources)
+        builder.build(report, self.output, self.sources, self.quality)
 
         self.assertTrue(self.output.exists())
         self.assertTrue(self.sources.exists())
+        self.assertTrue(self.quality.exists())
         presentation = Presentation(self.output)
         self.assertAlmostEqual(10.0, presentation.slide_width / 914400, places=2)
         self.assertAlmostEqual(7.5, presentation.slide_height / 914400, places=2)
@@ -62,6 +64,11 @@ class VocationalPptxBuilderTests(unittest.TestCase):
         self.assertIn("本期核心观点", slide_text(presentation.slides[1]))
         self.assertIn("行业判断", all_text)
         self.assertIn("后续跟踪", all_text)
+        self.assertIn("主体背景", all_text)
+        self.assertIn("受益", all_text)
+        self.assertIn("风险", all_text)
+        self.assertIn("测试省教育厅", all_text)
+        self.assertIn("2026-06-16", all_text)
         self.assertIn("本期行业判断", slide_text(presentation.slides[-1]))
         self.assertTrue(
             any(
@@ -74,6 +81,7 @@ class VocationalPptxBuilderTests(unittest.TestCase):
             "# 职教行业周报来源清单",
             self.sources.read_text(encoding="utf-8"),
         )
+        self.assertIn("总分：34/40", self.quality.read_text(encoding="utf-8"))
 
     def test_rejects_old_news_digest_before_building(self):
         builder = load_builder_module()

@@ -37,8 +37,9 @@ class EducationPptxBuilderTests(unittest.TestCase):
     def setUp(self):
         self.output = OUTPUT_DIR / "education_valid.pptx"
         self.sources = OUTPUT_DIR / "education_sources.md"
+        self.quality = OUTPUT_DIR / "education_quality.md"
         self.rejected_output = OUTPUT_DIR / "should_not_exist.pptx"
-        for path in (self.output, self.sources, self.rejected_output):
+        for path in (self.output, self.sources, self.quality, self.rejected_output):
             if path.exists():
                 path.unlink()
 
@@ -50,10 +51,11 @@ class EducationPptxBuilderTests(unittest.TestCase):
             "rows": [["测试机构甲", "合格"], ["测试机构乙", "合格"]],
         }
 
-        builder.build(report, self.output, self.sources)
+        builder.build(report, self.output, self.sources, self.quality)
 
         self.assertTrue(self.output.exists())
         self.assertTrue(self.sources.exists())
+        self.assertTrue(self.quality.exists())
         presentation = Presentation(self.output)
         self.assertAlmostEqual(10.0, presentation.slide_width / 914400, places=2)
         self.assertAlmostEqual(7.5, presentation.slide_height / 914400, places=2)
@@ -61,6 +63,11 @@ class EducationPptxBuilderTests(unittest.TestCase):
         self.assertIn("本期核心观点", slide_text(presentation.slides[1]))
         self.assertIn("行业判断", "\n".join(slide_text(slide) for slide in presentation.slides))
         self.assertIn("后续跟踪", "\n".join(slide_text(slide) for slide in presentation.slides))
+        self.assertIn("主体背景", "\n".join(slide_text(slide) for slide in presentation.slides))
+        self.assertIn("受益", "\n".join(slide_text(slide) for slide in presentation.slides))
+        self.assertIn("风险", "\n".join(slide_text(slide) for slide in presentation.slides))
+        self.assertIn("测试教育科技公司甲", "\n".join(slide_text(slide) for slide in presentation.slides))
+        self.assertIn("2026-06-24", "\n".join(slide_text(slide) for slide in presentation.slides))
         self.assertIn("本期行业判断", slide_text(presentation.slides[-1]))
         self.assertTrue(
             any(
@@ -73,6 +80,16 @@ class EducationPptxBuilderTests(unittest.TestCase):
             "# 教育行业观察来源清单",
             self.sources.read_text(encoding="utf-8"),
         )
+        self.assertIn(
+            "总分：34/40",
+            self.quality.read_text(encoding="utf-8"),
+        )
+        for slide in presentation.slides:
+            for shape in slide.shapes:
+                self.assertGreaterEqual(shape.left, 0)
+                self.assertGreaterEqual(shape.top, 0)
+                self.assertLessEqual(shape.left + shape.width, presentation.slide_width)
+                self.assertLessEqual(shape.top + shape.height, presentation.slide_height)
 
     def test_rejects_old_news_digest_before_building(self):
         builder = load_builder_module()

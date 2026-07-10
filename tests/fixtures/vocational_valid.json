@@ -17,11 +17,13 @@
       "items": [
         {
           "id": "V1",
+          "content_role": "event",
           "headline": "[测试样例] 省级方案明确职业教育新双高建设任务",
           "short_title": "省级方案部署职教新双高",
           "event_date": "2026-06-16",
           "subject": "测试省教育厅",
           "event_type": "政策",
+          "background": "该省正在推进现代职业教育体系改革，本次方案把专业布局、产教融合和项目验收纳入统一安排。",
           "facts": [
             "方案提出建设高水平高职学校和专业群。",
             "专业布局要求对接先进制造和现代服务产业链。",
@@ -40,16 +42,18 @@
             "investment_relevance": "可跟踪财政和企业投入。"
           },
           "sources": [
-            {"name": "测试省教育厅", "url": "https://example.com/vocational/v1", "published_at": "2026-06-16", "source_type": "government", "is_primary": true}
+            {"name": "测试省教育厅", "url": "https://example.com/vocational/v1", "published_at": "2026-06-16", "source_type": "government", "is_primary": true, "access_status": "verified", "access_checked_at": "2026-06-28"}
           ]
         },
         {
           "id": "V2",
+          "content_role": "event",
           "headline": "[测试样例] 新设公办本科层次职业学校获批",
           "short_title": "公办职业大学获批设立",
           "event_date": "2026-06-18",
           "subject": "测试职业大学",
           "event_type": "院校设置",
+          "background": "学校由现有公办高职院校升格而来，原有优势专业集中在区域制造、商贸和现代服务领域。",
           "facts": [
             "教育主管部门批准以现有高职院校为基础设立职业大学。",
             "学校首批设置五个职业本科专业。",
@@ -68,7 +72,7 @@
             "investment_relevance": "可跟踪招生和建设投入。"
           },
           "sources": [
-            {"name": "测试省政府", "url": "https://example.com/vocational/v2", "published_at": "2026-06-18", "source_type": "government", "is_primary": true}
+            {"name": "测试省政府", "url": "https://example.com/vocational/v2", "published_at": "2026-06-18", "source_type": "government", "is_primary": true, "access_status": "verified", "access_checked_at": "2026-06-28"}
           ]
         }
       ]
@@ -78,11 +82,13 @@
       "items": [
         {
           "id": "V3",
+          "content_role": "event",
           "headline": "[测试样例] 职业院校与制造企业共建产业学院",
           "short_title": "校企共建智能制造产业学院",
           "event_date": "2026-06-21",
           "subject": "测试职业学院与测试制造企业",
           "event_type": "产业学院",
+          "background": "学校已开设装备制造专业群，企业在当地建设生产基地并持续招聘智能制造技能岗位。",
           "facts": [
             "校企双方签署产业学院共建协议。",
             "合作覆盖课程、实训基地、师资和订单班。",
@@ -101,16 +107,18 @@
             "investment_relevance": "可验证企业投入和就业结果。"
           },
           "sources": [
-            {"name": "测试职业学院", "url": "https://example.com/vocational/v3", "published_at": "2026-06-21", "source_type": "school", "is_primary": true}
+            {"name": "测试职业学院", "url": "https://example.com/vocational/v3", "published_at": "2026-06-21", "source_type": "school", "is_primary": true, "access_status": "verified", "access_checked_at": "2026-06-28"}
           ]
         },
         {
           "id": "V4",
+          "content_role": "event",
           "headline": "[测试样例] 职教上市公司签订区域培训合作",
           "short_title": "职教上市公司签培训合作",
           "event_date": "2026-06-24",
           "subject": "测试职教上市公司",
           "event_type": "上市公司事项",
+          "background": "公司主营职业培训和企业服务，正在从个人付费业务向园区和企业客户拓展。",
           "facts": [
             "上市公司公告与区域产业园签订技能培训合作。",
             "合作明确培训对象、课程方向和年度人数。",
@@ -129,7 +137,7 @@
             "investment_relevance": "可量化上市公司收入影响。"
           },
           "sources": [
-            {"name": "测试交易所公告", "url": "https://example.com/vocational/v4", "published_at": "2026-06-24", "source_type": "exchange", "is_primary": true}
+            {"name": "测试交易所公告", "url": "https://example.com/vocational/v4", "published_at": "2026-06-24", "source_type": "exchange", "is_primary": true, "access_status": "verified", "access_checked_at": "2026-06-28"}
           ]
         }
       ]
@@ -139,11 +147,13 @@
       "items": [
         {
           "id": "V5",
+          "content_role": "event",
           "headline": "[测试样例] 技能培训平台完成新一轮融资",
           "short_title": "技能培训平台完成融资",
           "event_date": "2026-06-27",
           "subject": "测试技能培训公司",
           "event_type": "融资",
+          "background": "公司面向制造企业提供岗位技能培训和评价，收入主要来自企业年度培训项目。",
           "facts": [
             "公司完成新一轮融资，金额和投资方已披露。",
             "平台面向制造企业提供岗位技能培训和评价。",
@@ -162,11 +172,17 @@
             "investment_relevance": "融资和经营指标明确。"
           },
           "sources": [
-            {"name": "测试公司公告", "url": "https://example.com/vocational/v5", "published_at": "2026-06-27", "source_type": "company", "is_primary": true}
+            {"name": "测试公司公告", "url": "https://example.com/vocational/v5", "published_at": "2026-06-27", "source_type": "company", "is_primary": true, "access_status": "verified", "access_checked_at": "2026-06-28"}
           ]
         }
       ]
     }
   ],
-  "weekly_judgment": "本期样例显示，职业教育增量正在从政策目标转向可验收的学校、专业和企业项目。职业本科与新双高建设继续扩容，但项目价值取决于师资、实训、招生和就业能否同步落地。企业参与职教也不能只看签约数量，应持续验证真实投入、培训人数、岗位匹配、回款和续费。下一期重点跟踪首批项目名单、招生计划和企业合同兑现。"
+  "weekly_judgment": "本期样例显示，职业教育增量正在从政策目标转向可验收的学校、专业和企业项目。职业本科与新双高建设继续扩容，但项目价值取决于师资、实训、招生和就业能否同步落地。企业参与职教也不能只看签约数量，应持续验证真实投入、培训人数、岗位匹配、回款和续费。下一期重点跟踪首批项目名单、招生计划和企业合同兑现。",
+  "quality_review": {
+    "information_quality": {"score": 9, "reason": "五个事项均有日期、主体、一手来源和量化事实。"},
+    "analysis_depth": {"score": 8, "reason": "事件卡解释了办学、产业和企业兑现机制。"},
+    "readability": {"score": 9, "reason": "政策、院校、产教和融资栏目顺序清楚。"},
+    "strategic_value": {"score": 8, "reason": "可继续验证招生、投入、岗位、合同和回款。"}
+  }
 }

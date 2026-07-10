@@ -17,11 +17,13 @@
       "items": [
         {
           "id": "E1",
+          "content_role": "event",
           "headline": "[测试样例] AI备考平台完成天使轮融资",
           "short_title": "AI备考平台完成天使轮融资",
           "event_date": "2026-06-24",
           "subject": "测试教育科技公司甲",
           "event_type": "融资",
+          "background": "公司面向大学生考试场景提供课程、刷题、答疑和报考服务，已积累结构化题库与知识点数据。",
           "facts": [
             "公司完成天使轮融资，资金用于产品研发和市场验证。",
             "产品覆盖课程、刷题、答疑和报考信息，面向大学生考试场景。",
@@ -51,17 +53,21 @@
               "url": "https://example.com/education/e1",
               "published_at": "2026-06-24",
               "source_type": "company",
-              "is_primary": true
+              "is_primary": true,
+              "access_status": "verified",
+              "access_checked_at": "2026-07-05"
             }
           ]
         },
         {
           "id": "E3",
+          "content_role": "event",
           "headline": "[测试样例] 教育上市公司收购校园服务企业",
           "short_title": "上市公司收购校园服务企业",
           "event_date": "2026-06-28",
           "subject": "测试教育上市公司乙",
           "event_type": "收购",
+          "background": "上市公司原有业务以课程和学校服务为主，标的公司面向基础教育学校提供校园运营服务。",
           "facts": [
             "上市公司公告收购校园服务企业控股权。",
             "交易披露对价、支付方式和业绩承诺。",
@@ -91,7 +97,9 @@
               "url": "https://example.com/education/e3",
               "published_at": "2026-06-28",
               "source_type": "exchange",
-              "is_primary": true
+              "is_primary": true,
+              "access_status": "verified",
+              "access_checked_at": "2026-07-05"
             }
           ]
         }
@@ -102,11 +110,13 @@
       "items": [
         {
           "id": "E2",
+          "content_role": "event",
           "headline": "[测试样例] 地方发布人工智能赋能教育行动方案",
           "short_title": "地方发布AI教育行动方案",
           "event_date": "2026-06-26",
           "subject": "测试省教育厅",
           "event_type": "政策",
+          "background": "该地区此前已开展教育数字化试点，本次方案首次把人工智能课程和教学应用纳入统一行动安排。",
           "facts": [
             "行动方案明确中小学人工智能课程学时。",
             "方案覆盖备课、课堂、作业和评价场景。",
@@ -136,17 +146,21 @@
               "url": "https://example.com/education/e2",
               "published_at": "2026-06-26",
               "source_type": "government",
-              "is_primary": true
+              "is_primary": true,
+              "access_status": "verified",
+              "access_checked_at": "2026-07-05"
             }
           ]
         },
         {
           "id": "E4",
+          "content_role": "event",
           "headline": "[测试样例] 校外培训年检继续强化合规经营",
           "short_title": "培训年检强化合规经营",
           "event_date": "2026-07-01",
           "subject": "测试市教育委员会",
           "event_type": "监管",
+          "background": "线上学科类培训机构需要按年度接受办学检查，检查结果直接影响许可证延续和后续经营。",
           "facts": [
             "主管部门公布线上学科类机构年度检查结果。",
             "年检覆盖资质、收费、培训行为和网络安全。",
@@ -176,7 +190,9 @@
               "url": "https://example.com/education/e4",
               "published_at": "2026-07-01",
               "source_type": "government",
-              "is_primary": true
+              "is_primary": true,
+              "access_status": "verified",
+              "access_checked_at": "2026-07-05"
             }
           ]
         }
@@ -187,11 +203,13 @@
       "items": [
         {
           "id": "E5",
+          "content_role": "event",
           "headline": "[测试样例] 学校启动课堂智能评价平台采购",
           "short_title": "学校采购课堂智能评价平台",
           "event_date": "2026-07-03",
           "subject": "测试学校集团",
           "event_type": "采购",
+          "background": "学校集团已建设统一数据平台，本次采购希望把课堂分析、学情报告和教师研修接入现有教研体系。",
           "facts": [
             "学校集团启动课堂智能评价平台采购。",
             "采购范围包括课堂分析、学情报告和教师研修。",
@@ -221,12 +239,20 @@
               "url": "https://example.com/education/e5",
               "published_at": "2026-07-03",
               "source_type": "procurement",
-              "is_primary": true
+              "is_primary": true,
+              "access_status": "verified",
+              "access_checked_at": "2026-07-05"
             }
           ]
         }
       ]
     }
   ],
-  "weekly_judgment": "本期样例显示，教育行业的重要变化不在于新增了多少AI工具，而在于产品是否进入课程、作业、评价和校园服务等可持续流程。政策侧开始给出课程与应用场景，资本和上市公司则更关注能够形成付费闭环的垂直数据与学校入口。下一期应重点验证地方预算、学校采购、产品使用率和交易并表效果，避免只依据发布会或概念宣传判断行业进展。"
+  "weekly_judgment": "本期样例显示，教育行业的重要变化不在于新增了多少AI工具，而在于产品是否进入课程、作业、评价和校园服务等可持续流程。政策侧开始给出课程与应用场景，资本和上市公司则更关注能够形成付费闭环的垂直数据与学校入口。下一期应重点验证地方预算、学校采购、产品使用率和交易并表效果，避免只依据发布会或概念宣传判断行业进展。",
+  "quality_review": {
+    "information_quality": {"score": 9, "reason": "五个事项均有日期、主体、一手来源和可核验事实。"},
+    "analysis_depth": {"score": 8, "reason": "事件卡包含因果解释、受益方、风险和验证问题。"},
+    "readability": {"score": 9, "reason": "页面结构固定，事实、判断和跟踪分层呈现。"},
+    "strategic_value": {"score": 8, "reason": "结论可以转化为预算、采购、用户和交易跟踪任务。"}
+  }
 }
