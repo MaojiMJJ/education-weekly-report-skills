@@ -43,6 +43,51 @@ INTERNAL_MARKERS = (
     "工作底稿",
 )
 
+PERIOD_TRIGGER_TYPES = {
+    "policy_issued",
+    "policy_effective",
+    "financing_announced",
+    "transaction_signed",
+    "filing_published",
+    "product_launched",
+    "deployment_started",
+    "official_data_released",
+    "material_business_update",
+}
+
+EVENT_TRIGGER_RULES = (
+    (
+        ("融资", "资本", "并购", "收购", "交易", "上市", "ipo"),
+        {"financing_announced", "transaction_signed", "filing_published"},
+    ),
+    (
+        ("政策", "监管"),
+        {"policy_issued", "policy_effective", "official_data_released"},
+    ),
+    (
+        ("采购", "中标", "部署", "试点"),
+        {"deployment_started", "filing_published"},
+    ),
+    (
+        ("产品", "ai教育", "人工智能", "技术"),
+        {"product_launched", "deployment_started", "official_data_released"},
+    ),
+)
+
+TRIGGER_ACTION_TERMS = {
+    "policy_issued": ("发布", "印发", "出台", "通过"),
+    "policy_effective": ("生效", "施行", "实施"),
+    "financing_announced": ("融资", "完成", "获得", "获投"),
+    "transaction_signed": ("签署", "签订", "签约", "并购", "收购", "完成交易", "公告"),
+    "filing_published": ("公告", "递交", "受理", "挂牌", "上市", "披露"),
+    "product_launched": ("发布", "上线", "推出"),
+    "deployment_started": ("中标", "采购", "部署", "试点", "开通", "启动"),
+    "official_data_released": ("发布", "披露", "公布"),
+    "material_business_update": ("启动", "签约", "落地", "开工"),
+}
+
+RETROSPECTIVE_TRIGGER_MARKERS = ("盘点", "回顾", "汇总", "历史梳理")
+
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 PERIOD_PATTERN = re.compile(
     r"^(\d{4})[.-](\d{2})[.-](\d{2})\s*-\s*(\d{4})[.-](\d{2})[.-](\d{2})$"
@@ -188,6 +233,25 @@ def _check_internal_markers(issues, label, value):
             break
 
 
+def _allowed_trigger_types(event_type):
+    normalized = str(event_type or "").strip().lower()
+    for keywords, allowed in EVENT_TRIGGER_RULES:
+        if any(keyword in normalized for keyword in keywords):
+            return allowed
+    return PERIOD_TRIGGER_TYPES
+
+
+def _date_appears_in_text(value, text):
+    if not value or not _is_text(text):
+        return False
+    forms = (
+        value.isoformat(),
+        f"{value.year}年{value.month}月{value.day}日",
+        f"{value.month}月{value.day}日",
+    )
+    return any(form in text for form in forms)
+
+
 def validate_report(report):
     """校验报告并返回可供生成器使用的质量摘要。"""
 
@@ -251,6 +315,39 @@ def validate_report(report):
             issues.append(f"事项 {item_id} 的 event_date 必须使用有效的 YYYY-MM-DD")
         elif period and not period_start <= event_date <= period_end:
             issues.append(f"事项 {item_id} 的 event_date 不在报告期内")
+
+        trigger = item.get("period_trigger")
+        if not isinstance(trigger, dict):
+            issues.append(f"事项 {item_id} 必须包含 period_trigger")
+            trigger = {}
+
+        trigger_type = trigger.get("type")
+        if trigger_type not in PERIOD_TRIGGER_TYPES:
+            issues.append(f"事项 {item_id} 的本期触发类型无效")
+        elif trigger_type not in _allowed_trigger_types(item.get("event_type")):
+            issues.append(f"事项 {item_id} 的本期触发类型与 event_type 不匹配")
+
+        trigger_description = trigger.get("description")
+        _check_text(
+            issues,
+            f"事项 {item_id} 的 period_trigger.description",
+            trigger_description,
+            12,
+            120,
+        )
+        if _is_text(trigger_description):
+            if any(marker in trigger_description for marker in RETROSPECTIVE_TRIGGER_MARKERS):
+                issues.append(f"事项 {item_id} 的本期触发说明不能是跨期盘点或历史回顾")
+            if event_date and not _date_appears_in_text(event_date, trigger_description):
+                issues.append(f"事项 {item_id} 的本期触发说明必须写明 event_date")
+            if trigger_type in TRIGGER_ACTION_TERMS and not any(
+                term in trigger_description for term in TRIGGER_ACTION_TERMS[trigger_type]
+            ):
+                issues.append(f"事项 {item_id} 的本期触发说明缺少具体新增动作")
+
+        trigger_url = trigger.get("source_url", "")
+        if not _valid_url(trigger_url):
+            issues.append(f"事项 {item_id} 的触发来源 URL 无效")
 
         facts = item.get("facts")
         _validate_list(issues, item_id, "facts", facts, 3, 5, 140)
@@ -357,7 +454,23 @@ def validate_report(report):
                 else:
                     source_documents[document_key] = item_id
 
-        if sources and not has_period_source:
+        matching_trigger_source = None
+        if _valid_url(trigger_url):
+            trigger_key = _normalise_url(trigger_url)
+            for source in sources:
+                if isinstance(source, dict) and _valid_url(source.get("url", "")):
+                    if _normalise_url(source["url"]) == trigger_key:
+                        matching_trigger_source = source
+                        break
+        if not matching_trigger_source:
+            issues.append(f"事项 {item_id} 的触发来源必须出现在 sources 中")
+        elif (
+            matching_trigger_source.get("access_status") != "verified"
+            or not matching_trigger_source.get("is_primary")
+        ):
+            issues.append(f"事项 {item_id} 的触发来源必须是已核验的一手或原创直接来源")
+
+        if sources and not has_period_source and trigger_type != "policy_effective":
             issues.append(f"事项 {item_id} 至少需要 1 个发布日期在报告期内的直接来源")
         if footer_length > 110:
             issues.append(f"事项 {item_id} 的来源名称过长，页脚无法稳定展示")

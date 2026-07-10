@@ -23,6 +23,11 @@
           "event_date": "2026-06-16",
           "subject": "测试省教育厅",
           "event_type": "政策",
+          "period_trigger": {
+            "type": "policy_issued",
+            "description": "测试省教育厅于2026年6月16日发布职业教育新双高建设方案",
+            "source_url": "https://jyt.jiangsu.gov.cn/art/v1.html"
+          },
           "background": "该省正在推进现代职业教育体系改革，本次方案把专业布局、产教融合和项目验收纳入统一安排。",
           "facts": [
             "方案提出建设高水平高职学校和专业群。",
@@ -53,6 +58,11 @@
           "event_date": "2026-06-18",
           "subject": "测试职业大学",
           "event_type": "院校设置",
+          "period_trigger": {
+            "type": "policy_issued",
+            "description": "教育主管部门于2026年6月18日发布设立测试职业大学的批复",
+            "source_url": "https://www.gov.cn/zhengce/v2.htm"
+          },
           "background": "学校由现有公办高职院校升格而来，原有优势专业集中在区域制造、商贸和现代服务领域。",
           "facts": [
             "教育主管部门批准以现有高职院校为基础设立职业大学。",
@@ -88,6 +98,11 @@
           "event_date": "2026-06-21",
           "subject": "测试职业学院与测试制造企业",
           "event_type": "产业学院",
+          "period_trigger": {
+            "type": "material_business_update",
+            "description": "校企双方于2026年6月21日签约共建智能制造产业学院",
+            "source_url": "https://www.sziit.edu.cn/info/v3.htm"
+          },
           "background": "学校已开设装备制造专业群，企业在当地建设生产基地并持续招聘智能制造技能岗位。",
           "facts": [
             "校企双方签署产业学院共建协议。",
@@ -118,6 +133,11 @@
           "event_date": "2026-06-24",
           "subject": "测试职教上市公司",
           "event_type": "上市公司事项",
+          "period_trigger": {
+            "type": "transaction_signed",
+            "description": "测试职教上市公司于2026年6月24日公告签订区域技能培训合作",
+            "source_url": "https://www.cninfo.com.cn/new/disclosure/detail/v4"
+          },
           "background": "公司主营职业培训和企业服务，正在从个人付费业务向园区和企业客户拓展。",
           "facts": [
             "上市公司公告与区域产业园签订技能培训合作。",
@@ -153,6 +173,11 @@
           "event_date": "2026-06-27",
           "subject": "测试技能培训公司",
           "event_type": "融资",
+          "period_trigger": {
+            "type": "financing_announced",
+            "description": "测试技能培训公司于2026年6月27日宣布完成新一轮融资",
+            "source_url": "https://www.cninfo.com.cn/new/disclosure/detail/v5"
+          },
           "background": "公司面向制造企业提供岗位技能培训和评价，收入主要来自企业年度培训项目。",
           "facts": [
             "公司完成新一轮融资，金额和投资方已披露。",
