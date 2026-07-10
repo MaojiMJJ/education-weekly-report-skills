@@ -240,13 +240,13 @@ def add_item_slide(prs: Presentation, section_name: str, item: dict[str, Any], n
 
     evidence = item.get("evidence_table")
     if evidence:
-        add_bullets(slide, 1.85, 1.48, 7.48, 0.96, item["facts"][:3], 10.5, 2)
+        add_bullets(slide, 1.85, 1.48, 7.48, 0.96, item["facts"][:3], 10.0, 2)
         add_background_box(slide, item, 1.9, 2.5, 7.35, 0.42)
         add_evidence_table(slide, evidence, 2.0, 3.0, 7.15, 1.2)
         add_analysis_box(slide, item, 1.86, 4.38, 7.45, 1.18)
         add_tracking_box(slide, item, 1.86, 5.76, 7.45, 0.62)
     else:
-        add_bullets(slide, 1.85, 1.5, 7.46, 2.12, item["facts"], 11.8, 5)
+        add_bullets(slide, 1.85, 1.5, 7.46, 2.12, item["facts"], 10.0, 5)
         add_background_box(slide, item, 1.9, 3.73, 7.35, 0.48)
         add_analysis_box(slide, item, 1.86, 4.38, 7.45, 1.18)
         add_tracking_box(slide, item, 1.86, 5.76, 7.45, 0.62)

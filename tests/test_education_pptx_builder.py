@@ -120,6 +120,22 @@ class EducationPptxBuilderTests(unittest.TestCase):
         self.assertIn("质量报告", str(caught.exception))
         self.assertFalse(self.output.exists())
 
+    def test_facts_use_compact_font_to_avoid_punctuation_widows(self):
+        builder = load_builder_module()
+        report = load_fixture("education_valid.json")
+
+        builder.build(report, self.output, self.sources, self.quality)
+
+        presentation = Presentation(self.output)
+        first_fact = report["sections"][0]["items"][0]["facts"][0]
+        facts_box = next(
+            shape
+            for slide in presentation.slides
+            for shape in slide.shapes
+            if hasattr(shape, "text") and first_fact[:-1] in shape.text
+        )
+        self.assertEqual(10.0, facts_box.text_frame.paragraphs[0].font.size.pt)
+
 
 if __name__ == "__main__":
     unittest.main()
