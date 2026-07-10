@@ -416,12 +416,12 @@ def self_test_spec() -> dict[str, Any]:
             {"name": "行业速览-政策", "items": items[2:4]},
             {"name": "行业速览-AI教育", "items": items[4:]},
         ],
-        "weekly_judgment": "本期样例覆盖政策与产品发布，事项均包含明确时间、主体、公开事实和行业影响。报告按栏目同步正式进展，并通过来源、评分和报告期门槛排除检索过程、空结果与低价值信息，使外发内容保持简洁、完整和可核验。",
+        "weekly_judgment": "本期样例覆盖政策与产品发布，事项均包含明确时间、主体、公开事实和行业影响。报告按栏目同步正式进展，并通过来源、评分和报告期门槛排除检索过程、空结果与低价值信息。各事项的受益对象和主要风险均有公开依据，外发内容聚焦已经发生的变化，使读者可以快速了解行业进展及其影响。",
         "quality_review": {
             "information_quality": {"score": 8, "reason": "自检事项均包含日期、主体、来源和事实字段。"},
             "analysis_depth": {"score": 8, "reason": "自检事项包含判断、受益方和风险分析。"},
             "readability": {"score": 8, "reason": "自检页面使用固定结构并限制文本容量。"},
-            "strategic_value": {"score": 8, "reason": "自检内容可以形成下一期量化验证任务。"},
+            "strategic_value": {"score": 8, "reason": "自检内容能够清楚呈现本期事项及其行业影响。"},
         },
     }
 
