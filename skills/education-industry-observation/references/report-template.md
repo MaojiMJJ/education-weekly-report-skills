@@ -56,7 +56,7 @@
           "sources": [
             {
               "name": "来源名称",
-              "url": "https://example.com/source",
+              "url": "https://www.moe.gov.cn/实际公开页面",
               "published_at": "2026-06-24",
               "source_type": "company",
               "is_primary": true,
@@ -82,7 +82,9 @@
 }
 ```
 
-`evidence_table` 可选，只在名单、交易条款、数据对比或政策清单比文字更清楚时使用。
+`evidence_table` 可选，只在名单、交易条款、数据对比或政策清单比文字更清楚时使用。表格限 2-4 列、1-3 行；2 列每格最多 20 字，3 列最多 12 字，4 列最多 8 字。
+
+每个事项至少包含 1 个 `is_primary: true` 的一手来源或原创直接来源。`access_checked_at` 必须是实际打开页面的日期，且不得早于 `published_at`；保留域名、占位链接和搜索摘要不能标记为已核验。
 
 ## 页面映射
 

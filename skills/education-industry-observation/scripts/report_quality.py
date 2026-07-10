@@ -43,24 +43,6 @@ INTERNAL_MARKERS = (
     "工作底稿",
 )
 
-PRIMARY_REQUIRED_TOKENS = (
-    "政策",
-    "监管",
-    "收购",
-    "并购",
-    "再融资",
-    "非公开发行",
-    "交易",
-    "融资",
-    "上市公司",
-    "院校设置",
-    "升本",
-    "学校设置",
-    "合作",
-    "采购",
-    "中标",
-)
-
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 PERIOD_PATTERN = re.compile(
     r"^(\d{4})[.-](\d{2})[.-](\d{2})\s*-\s*(\d{4})[.-](\d{2})[.-](\d{2})$"
@@ -112,7 +94,14 @@ def _valid_url(url):
     if not _is_text(url):
         return False
     parts = urlsplit(url.strip())
-    return parts.scheme in {"http", "https"} and bool(parts.netloc)
+    hostname = (parts.hostname or "").lower().rstrip(".")
+    if parts.scheme not in {"http", "https"} or not hostname:
+        return False
+    if hostname in {"localhost", "example.com"} or hostname.endswith(
+        (".localhost", ".invalid", ".test", ".example", ".example.com")
+    ):
+        return False
+    return True
 
 
 def _check_text(issues, label, value, minimum=1, maximum=None):
@@ -153,16 +142,19 @@ def _validate_evidence_table(issues, item_id, evidence):
 
     columns = evidence.get("columns")
     rows = evidence.get("rows")
-    if not isinstance(columns, list) or not 2 <= len(columns) <= 5:
-        issues.append(f"事项 {item_id} 的 evidence_table.columns 必须包含 2-5 列")
+    if not isinstance(columns, list) or not 2 <= len(columns) <= 4:
+        issues.append(f"事项 {item_id} 的 evidence_table.columns 必须包含 2-4 列")
         return
     for index, column in enumerate(columns, 1):
-        if not _is_text(column) or len(column.strip()) > 20:
-            issues.append(f"事项 {item_id} 的 evidence_table.columns[{index}] 必须为 1-20 字文本")
+        if not _is_text(column) or len(column.strip()) > 10:
+            issues.append(f"事项 {item_id} 的 evidence_table.columns[{index}] 必须为 1-10 字文本")
 
-    if not isinstance(rows, list) or not 1 <= len(rows) <= 8:
-        issues.append(f"事项 {item_id} 的 evidence_table.rows 必须包含 1-8 行")
+    if not isinstance(rows, list) or not rows:
+        issues.append(f"事项 {item_id} 的 evidence_table.rows 至少需要 1 行")
         return
+    if len(rows) > 3:
+        issues.append(f"事项 {item_id} 的 evidence_table.rows 最多允许 3 行")
+    cell_limit = {2: 20, 3: 12, 4: 8}[len(columns)]
     for row_index, row in enumerate(rows, 1):
         if not isinstance(row, list) or len(row) != len(columns):
             issues.append(f"事项 {item_id} 的 evidence_table.rows[{row_index}] 列数必须与表头一致")
@@ -170,12 +162,22 @@ def _validate_evidence_table(issues, item_id, evidence):
         for column_index, cell in enumerate(row, 1):
             if not isinstance(cell, (str, int, float)) or isinstance(cell, bool):
                 issues.append(f"事项 {item_id} 的 evidence_table.rows[{row_index}][{column_index}] 类型不支持")
-            elif len(str(cell)) > 30:
-                issues.append(f"事项 {item_id} 的 evidence_table.rows[{row_index}][{column_index}] 不得超过 30 字")
+            elif len(str(cell)) > cell_limit:
+                issues.append(
+                    f"事项 {item_id} 的 evidence_table.rows[{row_index}][{column_index}] "
+                    f"在 {len(columns)} 列表格中不得超过 {cell_limit} 字"
+                )
 
 
-def _requires_primary_source(event_type):
-    return any(token in event_type for token in PRIMARY_REQUIRED_TOKENS)
+def _iter_text_values(value):
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for entry in value.values():
+            yield from _iter_text_values(entry)
+    elif isinstance(value, (list, tuple)):
+        for entry in value:
+            yield from _iter_text_values(entry)
 
 
 def validate_report(report):
@@ -216,7 +218,7 @@ def validate_report(report):
 
         if item.get("content_role") != "event":
             issues.append(f"事项 {item_id} 的 content_role 必须是 event")
-        searchable_text = f"{section_name} {item.get('headline', '')}"
+        searchable_text = " ".join(_iter_text_values([section_name, item]))
         for marker in INTERNAL_MARKERS:
             if marker in searchable_text:
                 issues.append(f"事项 {item_id} 包含内部工作内容“{marker}”，不能进入 PPT 正文")
@@ -319,8 +321,13 @@ def validate_report(report):
 
             if source.get("access_status") != "verified":
                 issues.append(f"事项 {item_id} 的来源 access_status 必须是 verified")
-            if not _parse_iso_date(source.get("access_checked_at")):
+            checked_at = _parse_iso_date(source.get("access_checked_at"))
+            if not checked_at:
                 issues.append(f"事项 {item_id} 的来源 access_checked_at 必须使用有效的 YYYY-MM-DD")
+            elif published_at and checked_at < published_at:
+                issues.append(f"事项 {item_id} 的来源核验日期不得早于发布日期")
+            elif checked_at > date.today():
+                issues.append(f"事项 {item_id} 的来源核验日期不得晚于当前日期")
 
             if not isinstance(source.get("is_primary"), bool):
                 issues.append(f"事项 {item_id} 的来源必须声明 is_primary")
@@ -339,9 +346,8 @@ def validate_report(report):
             issues.append(f"事项 {item_id} 至少需要 1 个发布日期在报告期内的直接来源")
         if footer_length > 110:
             issues.append(f"事项 {item_id} 的来源名称过长，页脚无法稳定展示")
-        event_type = str(item.get("event_type", ""))
-        if _requires_primary_source(event_type) and sources and not has_primary:
-            issues.append(f"事项 {item_id} 属于重大事项，至少需要 1 个一手来源")
+        if sources and not has_primary:
+            issues.append(f"事项 {item_id} 至少需要 1 个一手来源或原创直接来源")
 
     clean_ids = [item_id for item_id in ids if _is_text(item_id)]
     if len(clean_ids) != len(set(clean_ids)):

@@ -82,6 +82,16 @@ class EducationReportQualityTests(unittest.TestCase):
 
         self.assertIn("content_role", str(caught.exception))
 
+    def test_rejects_internal_marker_inside_body(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        report["sections"][0]["items"][0]["facts"][0] = "未检索到更多材料，这是检索结论。"
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("内部工作内容", str(caught.exception))
+
     def test_rejects_event_outside_report_period(self):
         quality = load_quality_module()
         report = load_fixture("education_valid.json")
@@ -112,6 +122,38 @@ class EducationReportQualityTests(unittest.TestCase):
 
         self.assertIn("一手来源", str(caught.exception))
 
+    def test_event_type_alias_cannot_bypass_primary_source(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        item = report["sections"][0]["items"][0]
+        item["event_type"] = "资本动态"
+        item["sources"][0]["is_primary"] = False
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("一手来源", str(caught.exception))
+
+    def test_rejects_reserved_source_domain(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        report["sections"][0]["items"][0]["sources"][0]["url"] = "https://source.invalid/item"
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("URL", str(caught.exception))
+
+    def test_rejects_access_check_before_publication(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        report["sections"][0]["items"][0]["sources"][0]["access_checked_at"] = "2020-01-01"
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("不得早于发布日期", str(caught.exception))
+
     def test_rejects_extra_score_field(self):
         quality = load_quality_module()
         report = load_fixture("education_valid.json")
@@ -131,6 +173,19 @@ class EducationReportQualityTests(unittest.TestCase):
             quality.validate_report(report)
 
         self.assertIn("evidence_table", str(caught.exception))
+
+    def test_rejects_evidence_table_beyond_stable_capacity(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        report["sections"][0]["items"][0]["evidence_table"] = {
+            "columns": ["机构", "结果"],
+            "rows": [[f"测试机构{index}", "合格"] for index in range(8)],
+        }
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("最多允许 3 行", str(caught.exception))
 
     def test_rejects_overlong_fact(self):
         quality = load_quality_module()
@@ -193,7 +248,7 @@ class EducationReportQualityTests(unittest.TestCase):
 
         self.assertIn("# 教育行业观察来源清单", markdown)
         self.assertIn("E1", markdown)
-        self.assertIn("https://example.com/education/e1", markdown)
+        self.assertIn("https://www.cninfo.com.cn/new/disclosure/detail/e1", markdown)
 
     def test_builds_quality_markdown(self):
         quality = load_quality_module()

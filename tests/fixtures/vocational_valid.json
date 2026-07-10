@@ -42,7 +42,7 @@
             "investment_relevance": "可跟踪财政和企业投入。"
           },
           "sources": [
-            {"name": "测试省教育厅", "url": "https://example.com/vocational/v1", "published_at": "2026-06-16", "source_type": "government", "is_primary": true, "access_status": "verified", "access_checked_at": "2026-06-28"}
+            {"name": "测试省教育厅", "url": "https://jyt.jiangsu.gov.cn/art/v1.html", "published_at": "2026-06-16", "source_type": "government", "is_primary": true, "access_status": "verified", "access_checked_at": "2026-06-28"}
           ]
         },
         {
@@ -72,7 +72,7 @@
             "investment_relevance": "可跟踪招生和建设投入。"
           },
           "sources": [
-            {"name": "测试省政府", "url": "https://example.com/vocational/v2", "published_at": "2026-06-18", "source_type": "government", "is_primary": true, "access_status": "verified", "access_checked_at": "2026-06-28"}
+            {"name": "测试省政府", "url": "https://www.gov.cn/zhengce/v2.htm", "published_at": "2026-06-18", "source_type": "government", "is_primary": true, "access_status": "verified", "access_checked_at": "2026-06-28"}
           ]
         }
       ]
@@ -107,7 +107,7 @@
             "investment_relevance": "可验证企业投入和就业结果。"
           },
           "sources": [
-            {"name": "测试职业学院", "url": "https://example.com/vocational/v3", "published_at": "2026-06-21", "source_type": "school", "is_primary": true, "access_status": "verified", "access_checked_at": "2026-06-28"}
+            {"name": "测试职业学院", "url": "https://www.sziit.edu.cn/info/v3.htm", "published_at": "2026-06-21", "source_type": "school", "is_primary": true, "access_status": "verified", "access_checked_at": "2026-06-28"}
           ]
         },
         {
@@ -137,7 +137,7 @@
             "investment_relevance": "可量化上市公司收入影响。"
           },
           "sources": [
-            {"name": "测试交易所公告", "url": "https://example.com/vocational/v4", "published_at": "2026-06-24", "source_type": "exchange", "is_primary": true, "access_status": "verified", "access_checked_at": "2026-06-28"}
+            {"name": "测试交易所公告", "url": "https://www.cninfo.com.cn/new/disclosure/detail/v4", "published_at": "2026-06-24", "source_type": "exchange", "is_primary": true, "access_status": "verified", "access_checked_at": "2026-06-28"}
           ]
         }
       ]
@@ -172,7 +172,7 @@
             "investment_relevance": "融资和经营指标明确。"
           },
           "sources": [
-            {"name": "测试公司公告", "url": "https://example.com/vocational/v5", "published_at": "2026-06-27", "source_type": "company", "is_primary": true, "access_status": "verified", "access_checked_at": "2026-06-28"}
+            {"name": "测试公司公告", "url": "https://www.cninfo.com.cn/new/disclosure/detail/v5", "published_at": "2026-06-27", "source_type": "company", "is_primary": true, "access_status": "verified", "access_checked_at": "2026-06-28"}
           ]
         }
       ]

@@ -85,6 +85,55 @@ class VocationalReportQualityTests(unittest.TestCase):
         self.assertIn("不在报告期", message)
         self.assertIn("access_status", message)
 
+    def test_rejects_internal_marker_inside_body(self):
+        quality = load_quality_module()
+        report = load_fixture("vocational_valid.json")
+        report["sections"][0]["items"][0]["analysis"] = "这是检索结论，未检索到更多材料。"
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("内部工作内容", str(caught.exception))
+
+    def test_event_type_alias_cannot_bypass_primary_source(self):
+        quality = load_quality_module()
+        report = load_fixture("vocational_valid.json")
+        item = report["sections"][0]["items"][0]
+        item["event_type"] = "资本动态"
+        item["sources"][0]["is_primary"] = False
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("一手来源", str(caught.exception))
+
+    def test_rejects_reserved_domain_and_stale_access_check(self):
+        quality = load_quality_module()
+        report = load_fixture("vocational_valid.json")
+        source = report["sections"][0]["items"][0]["sources"][0]
+        source["url"] = "https://source.invalid/item"
+        source["access_checked_at"] = "2020-01-01"
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        message = str(caught.exception)
+        self.assertIn("URL", message)
+        self.assertIn("不得早于发布日期", message)
+
+    def test_rejects_evidence_table_beyond_stable_capacity(self):
+        quality = load_quality_module()
+        report = load_fixture("vocational_valid.json")
+        report["sections"][0]["items"][0]["evidence_table"] = {
+            "columns": ["院校", "结果"],
+            "rows": [[f"测试院校{index}", "通过"] for index in range(8)],
+        }
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("最多允许 3 行", str(caught.exception))
+
     def test_rejects_duplicate_source_document(self):
         quality = load_quality_module()
         report = load_fixture("vocational_valid.json")
@@ -104,7 +153,7 @@ class VocationalReportQualityTests(unittest.TestCase):
 
         self.assertIn("# 职教行业周报来源清单", markdown)
         self.assertIn("V1", markdown)
-        self.assertIn("https://example.com/vocational/v1", markdown)
+        self.assertIn("https://jyt.jiangsu.gov.cn/art/v1.html", markdown)
 
     def test_builds_quality_markdown(self):
         quality = load_quality_module()

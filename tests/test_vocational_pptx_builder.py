@@ -48,7 +48,7 @@ class VocationalPptxBuilderTests(unittest.TestCase):
         report = load_fixture("vocational_valid.json")
         report["sections"][0]["items"][1]["evidence_table"] = {
             "columns": ["职业本科专业", "首批招生"],
-            "rows": [["智能制造", "120人"], ["现代物流", "100人"]],
+            "rows": [["智能制造", "120人"], ["现代物流", "100人"], ["数字商务", "80人"]],
         }
 
         builder.build(report, self.output, self.sources, self.quality)
@@ -77,6 +77,14 @@ class VocationalPptxBuilderTests(unittest.TestCase):
                 for shape in slide.shapes
             )
         )
+        table_slide = next(
+            slide for slide in presentation.slides if any(getattr(shape, "has_table", False) for shape in slide.shapes)
+        )
+        table_shape = next(shape for shape in table_slide.shapes if getattr(shape, "has_table", False))
+        analysis_label = next(
+            shape for shape in table_slide.shapes if hasattr(shape, "text") and shape.text.strip() == "行业判断"
+        )
+        self.assertLessEqual(table_shape.top + table_shape.height, analysis_label.top)
         self.assertIn(
             "# 职教行业周报来源清单",
             self.sources.read_text(encoding="utf-8"),
@@ -92,6 +100,17 @@ class VocationalPptxBuilderTests(unittest.TestCase):
 
         self.assertIn("core_insights", str(caught.exception))
         self.assertFalse(self.rejected_output.exists())
+
+    def test_requires_sources_and_quality_delivery_paths(self):
+        builder = load_builder_module()
+        report = load_fixture("vocational_valid.json")
+
+        with self.assertRaises(ValueError) as caught:
+            builder.build(report, self.output)
+
+        self.assertIn("来源清单", str(caught.exception))
+        self.assertIn("质量报告", str(caught.exception))
+        self.assertFalse(self.output.exists())
 
 
 if __name__ == "__main__":

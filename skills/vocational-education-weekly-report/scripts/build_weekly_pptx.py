@@ -180,6 +180,9 @@ def add_evidence_table(slide, evidence, x, y, w, h):
         return
     table_shape = slide.shapes.add_table(len(rows) + 1, len(columns), Inches(x), Inches(y), Inches(w), Inches(h))
     table = table_shape.table
+    row_height = Inches(h / (len(rows) + 1))
+    for row in table.rows:
+        row.height = row_height
     column_width = Inches(w / len(columns))
     for column in table.columns:
         column.width = column_width
@@ -278,6 +281,8 @@ def build(
     quality_output: Path | None = None,
 ) -> None:
     validate_report(report)
+    if sources_output is None or quality_output is None:
+        raise ValueError("正式交付必须同时提供来源清单和质量报告输出路径")
     presentation = Presentation()
     presentation.slide_width = Inches(10)
     presentation.slide_height = Inches(7.5)
@@ -294,15 +299,13 @@ def build(
     output.parent.mkdir(parents=True, exist_ok=True)
     presentation.save(output)
 
-    if sources_output:
-        sources_output = Path(sources_output)
-        sources_output.parent.mkdir(parents=True, exist_ok=True)
-        sources_output.write_text(build_sources_markdown(report), encoding="utf-8")
+    sources_output = Path(sources_output)
+    sources_output.parent.mkdir(parents=True, exist_ok=True)
+    sources_output.write_text(build_sources_markdown(report), encoding="utf-8")
 
-    if quality_output:
-        quality_output = Path(quality_output)
-        quality_output.parent.mkdir(parents=True, exist_ok=True)
-        quality_output.write_text(build_quality_markdown(report), encoding="utf-8")
+    quality_output = Path(quality_output)
+    quality_output.parent.mkdir(parents=True, exist_ok=True)
+    quality_output.write_text(build_quality_markdown(report), encoding="utf-8")
 
 
 def self_test_spec() -> dict[str, Any]:
@@ -344,7 +347,7 @@ def self_test_spec() -> dict[str, Any]:
                 "sources": [
                     {
                         "name": f"自检来源 {index}",
-                        "url": f"https://example.com/self-test/{index}",
+                        "url": f"https://www.moe.gov.cn/self-test/vocational/{index}",
                         "published_at": f"2026-07-0{index}",
                         "source_type": "test",
                         "is_primary": True,
@@ -382,8 +385,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="根据研究型 JSON 生成职教行业周报 PPTX")
     parser.add_argument("input_json", nargs="?", help="报告 JSON 文件路径")
     parser.add_argument("--output", required=True, help="输出 PPTX 路径")
-    parser.add_argument("--sources-output", help="输出 Markdown 来源清单路径")
-    parser.add_argument("--quality-output", help="输出 Markdown 质量报告路径")
+    parser.add_argument("--sources-output", required=True, help="输出 Markdown 来源清单路径")
+    parser.add_argument("--quality-output", required=True, help="输出 Markdown 质量报告路径")
     parser.add_argument("--self-test", action="store_true", help="使用内置自检数据")
     args = parser.parse_args()
 
@@ -397,14 +400,12 @@ def main() -> None:
     build(
         report,
         Path(args.output),
-        Path(args.sources_output) if args.sources_output else None,
-        Path(args.quality_output) if args.quality_output else None,
+        Path(args.sources_output),
+        Path(args.quality_output),
     )
     print(f"已写入 {args.output}")
-    if args.sources_output:
-        print(f"已写入 {args.sources_output}")
-    if args.quality_output:
-        print(f"已写入 {args.quality_output}")
+    print(f"已写入 {args.sources_output}")
+    print(f"已写入 {args.quality_output}")
 
 
 if __name__ == "__main__":

@@ -50,7 +50,7 @@
           "sources": [
             {
               "name": "测试公司公告",
-              "url": "https://example.com/education/e1",
+              "url": "https://www.cninfo.com.cn/new/disclosure/detail/e1",
               "published_at": "2026-06-24",
               "source_type": "company",
               "is_primary": true,
@@ -94,7 +94,7 @@
           "sources": [
             {
               "name": "测试交易所公告",
-              "url": "https://example.com/education/e3",
+              "url": "https://www.cninfo.com.cn/new/disclosure/detail/e3",
               "published_at": "2026-06-28",
               "source_type": "exchange",
               "is_primary": true,
@@ -143,7 +143,7 @@
           "sources": [
             {
               "name": "测试省教育厅",
-              "url": "https://example.com/education/e2",
+              "url": "https://www.moe.gov.cn/srcsite/A01/s7048/e2.html",
               "published_at": "2026-06-26",
               "source_type": "government",
               "is_primary": true,
@@ -187,7 +187,7 @@
           "sources": [
             {
               "name": "测试市教育委员会",
-              "url": "https://example.com/education/e4",
+              "url": "https://www.samr.gov.cn/zw/zfxxgk/e4.html",
               "published_at": "2026-07-01",
               "source_type": "government",
               "is_primary": true,
@@ -236,7 +236,7 @@
           "sources": [
             {
               "name": "测试采购公告",
-              "url": "https://example.com/education/e5",
+              "url": "https://www.ccgp.gov.cn/cggg/dfgg/e5.htm",
               "published_at": "2026-07-03",
               "source_type": "procurement",
               "is_primary": true,
