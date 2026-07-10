@@ -4,7 +4,7 @@
 
 1. 封面。
 2. 本期核心观点，1-3 条。
-3. 重点事件，至少 5 个。
+3. 重点事件，至少 5 个；本期融资与交易非空时排在最前，空栏目省略。
 4. 本期行业判断，100-200 字。
 
 ## JSON 示例
@@ -33,6 +33,11 @@
           "event_date": "2026-06-24",
           "subject": "事项主体",
           "event_type": "融资",
+          "period_trigger": {
+            "type": "financing_announced",
+            "description": "事项主体于2026年6月24日宣布完成本轮融资",
+            "source_url": "https://www.cninfo.com.cn/new/disclosure/detail/education-round"
+          },
           "background": "20-140字主体背景，说明业务、客户、历史和本次事项的上下文。",
           "facts": ["事实一", "事实二", "事实三"],
           "analysis": "说明事件改变的行业变量、趋势和影响机制。",
@@ -56,7 +61,7 @@
           "sources": [
             {
               "name": "来源名称",
-              "url": "https://www.moe.gov.cn/实际公开页面",
+              "url": "https://www.cninfo.com.cn/new/disclosure/detail/education-round",
               "published_at": "2026-06-24",
               "source_type": "company",
               "is_primary": true,
@@ -86,11 +91,15 @@
 
 每个事项至少包含 1 个 `is_primary: true` 的一手来源或原创直接来源。`access_checked_at` 必须是实际打开页面的日期，且不得早于 `published_at`；保留域名、占位链接和搜索摘要不能标记为已核验。
 
+`period_trigger.type` 只允许：`policy_issued`、`policy_effective`、`financing_announced`、`transaction_signed`、`filing_published`、`product_launched`、`deployment_started`、`official_data_released`、`material_business_update`。`description` 必须写明 `event_date` 和具体新增动作；`source_url` 必须与该事项 `sources` 中已核验的一手或原创直接来源一致。
+
+媒体盘点、半年回顾、季度总结和历史梳理不是合法触发类型。历史数据只能作为本期事项的背景或补充事实，不能独立生成事件页。
+
 ## 页面映射
 
 - `core_insights` 生成本期核心观点页。
 - 每个 `item` 生成 1 个事件页。
-- `subject`、`event_date` 和 `event_type` 进入元数据行，`background` 进入主体背景区。
+- `subject`、`event_date` 和 `event_type` 进入元数据行，`period_trigger` 用于出刊前校验，`background` 进入主体背景区。
 - `facts` 进入事实区，`analysis`、`beneficiaries` 和 `risks` 进入行业判断框，`tracking` 进入后续跟踪框。
 - `sources` 在页脚显示来源名和日期，完整 URL 进入独立来源清单。
 - `weekly_judgment` 生成结尾页。

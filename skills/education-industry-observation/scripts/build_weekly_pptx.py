@@ -320,6 +320,11 @@ def self_test_spec() -> dict[str, Any]:
                 "event_date": f"2026-07-0{index}",
                 "subject": f"自检主体 {index}",
                 "event_type": "产品" if index % 2 else "政策",
+                "period_trigger": {
+                    "type": "product_launched" if index % 2 else "policy_issued",
+                    "description": f"自检主体 {index} 于2026年7月{index}日发布本期新增事项",
+                    "source_url": f"https://www.moe.gov.cn/self-test/{index}",
+                },
                 "background": "该主体已具备教育产品、客户或政策执行基础，本事项用于验证研究字段和版式容量。",
                 "facts": [
                     "该事项披露了明确的主体、时间和新增动作。",

@@ -320,6 +320,15 @@ def self_test_spec() -> dict[str, Any]:
                 "event_date": f"2026-07-0{index}",
                 "subject": f"自检主体 {index}",
                 "event_type": "产业学院" if index % 2 else "政策",
+                "period_trigger": {
+                    "type": "material_business_update" if index % 2 else "policy_issued",
+                    "description": (
+                        f"自检主体 {index} 于2026年7月{index}日签约落地产教项目"
+                        if index % 2
+                        else f"自检主体 {index} 于2026年7月{index}日发布本期政策"
+                    ),
+                    "source_url": f"https://www.moe.gov.cn/self-test/vocational/{index}",
+                },
                 "background": "该主体已具备职业教育办学、企业合作或政策执行基础，本事项用于验证研究字段和版式容量。",
                 "facts": [
                     "该事项披露了明确的主体、时间和新增动作。",
