@@ -130,6 +130,68 @@ class EducationReportQualityTests(unittest.TestCase):
 
         self.assertIn("不在报告期", str(caught.exception))
 
+    def test_rejects_current_article_about_old_period_roundup(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        item = report["sections"][0]["items"][0]
+        item["event_type"] = "融资"
+        item["event_date"] = "2026-07-03"
+        item["period_trigger"] = {
+            "type": "media_roundup",
+            "description": "媒体于2026年7月3日盘点上半年融资事项",
+            "source_url": item["sources"][0]["url"],
+        }
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("本期触发类型", str(caught.exception))
+
+    def test_financing_cannot_use_generic_data_release_as_period_trigger(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        item = report["sections"][0]["items"][0]
+        item["event_type"] = "融资"
+        item["period_trigger"]["type"] = "official_data_released"
+        item["period_trigger"]["description"] = "媒体发布上半年融资汇总数据"
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("与 event_type 不匹配", str(caught.exception))
+
+    def test_period_trigger_source_must_match_verified_primary_source(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        item = report["sections"][0]["items"][0]
+        item["period_trigger"]["source_url"] = "https://news.example.org/roundup"
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("触发来源", str(caught.exception))
+
+    def test_accepts_current_financing_announcement(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+
+        quality.validate_report(report)
+
+    def test_accepts_policy_effective_with_older_official_source(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        item = report["sections"][1]["items"][0]
+        item["event_type"] = "政策"
+        item["event_date"] = "2026-06-24"
+        item["period_trigger"] = {
+            "type": "policy_effective",
+            "description": "测试省教育厅发布的管理办法于2026年6月24日正式施行",
+            "source_url": item["sources"][0]["url"],
+        }
+        item["sources"][0]["published_at"] = "2026-05-20"
+
+        quality.validate_report(report)
+
     def test_rejects_unverified_source(self):
         quality = load_quality_module()
         report = load_fixture("education_valid.json")
