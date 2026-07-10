@@ -77,7 +77,7 @@ python C:\Users\maoji\.codex\skills\.system\skill-creator\scripts\quick_validate
   skills\vocational-education-weekly-report
 ```
 
-测试固定包含：0709 失败样例拒绝、正文内部标记拒绝、跨期事项拒绝、保留域名拒绝、核验日期关系、所有事项直接来源、低分事项拒绝、重复来源拒绝、文本与表格容量、4:3 页面，以及三件套强制交付。
+测试固定包含：0709 失败样例拒绝、所有读者可见字段的内部标记拒绝、跨期事项拒绝、保留域名拒绝、核验日期关系、所有事项直接来源、低分事项拒绝、重复来源拒绝、文本与表格容量、4:3 页面，以及三件套强制交付。
 
 ## 本地部署
 

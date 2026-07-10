@@ -180,12 +180,31 @@ def _iter_text_values(value):
             yield from _iter_text_values(entry)
 
 
+def _check_internal_markers(issues, label, value):
+    searchable_text = " ".join(_iter_text_values(value))
+    for marker in INTERNAL_MARKERS:
+        if marker in searchable_text:
+            issues.append(f"{label}包含内部工作内容“{marker}”，不能进入正式交付")
+            break
+
+
 def validate_report(report):
     """校验报告并返回可供生成器使用的质量摘要。"""
 
     issues = []
     if not isinstance(report, dict):
         raise ReportQualityError(["报告根节点必须是对象"])
+
+    _check_internal_markers(
+        issues,
+        "报告顶层可见字段",
+        {
+            "title": report.get("title"),
+            "core_insights": report.get("core_insights"),
+            "weekly_judgment": report.get("weekly_judgment"),
+            "quality_review": report.get("quality_review"),
+        },
+    )
 
     _check_text(issues, "title", report.get("title"), 2, 30)
     period = _parse_period(report.get("period"))
@@ -218,11 +237,7 @@ def validate_report(report):
 
         if item.get("content_role") != "event":
             issues.append(f"事项 {item_id} 的 content_role 必须是 event")
-        searchable_text = " ".join(_iter_text_values([section_name, item]))
-        for marker in INTERNAL_MARKERS:
-            if marker in searchable_text:
-                issues.append(f"事项 {item_id} 包含内部工作内容“{marker}”，不能进入 PPT 正文")
-                break
+        _check_internal_markers(issues, f"事项 {item_id} ", [section_name, item])
 
         _check_text(issues, f"事项 {item_id} 的 id", item.get("id"), 1, 20)
         _check_text(issues, f"事项 {item_id} 的 headline", item.get("headline"), 8, 70)

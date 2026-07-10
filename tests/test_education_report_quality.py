@@ -92,6 +92,34 @@ class EducationReportQualityTests(unittest.TestCase):
 
         self.assertIn("内部工作内容", str(caught.exception))
 
+    def test_rejects_internal_markers_in_top_level_visible_content(self):
+        quality = load_quality_module()
+        mutations = (
+            ("title", lambda report: report.__setitem__("title", "未检索到事项的教育行业观察")),
+            (
+                "core_insights",
+                lambda report: report["core_insights"][0].__setitem__("claim", "本期检索结论尚无重要变化"),
+            ),
+            (
+                "weekly_judgment",
+                lambda report: report.__setitem__("weekly_judgment", "未检索到更多事项，这是检索结论。" * 8),
+            ),
+            (
+                "quality_review",
+                lambda report: report["quality_review"]["information_quality"].__setitem__(
+                    "reason", "未检索到更多来源，这是检索结论。"
+                ),
+            ),
+        )
+
+        for label, mutate in mutations:
+            with self.subTest(label=label):
+                report = load_fixture("education_valid.json")
+                mutate(report)
+                with self.assertRaises(quality.ReportQualityError) as caught:
+                    quality.validate_report(report)
+                self.assertIn("内部工作内容", str(caught.exception))
+
     def test_rejects_event_outside_report_period(self):
         quality = load_quality_module()
         report = load_fixture("education_valid.json")
