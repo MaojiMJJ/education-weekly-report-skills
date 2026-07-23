@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -29,8 +30,11 @@ from report_quality import (
 )
 
 
-FONT = "Microsoft YaHei"
-TITLE_FONT = "Microsoft YaHei"
+FONT = "KaiTi"
+TITLE_FONT = "KaiTi"
+TITLE_SIZE = 36
+SIDE_LABEL_SIZE = 18
+BODY_SIZE = 16
 INK = RGBColor(31, 38, 46)
 MUTED = RGBColor(91, 104, 112)
 GREEN = RGBColor(117, 143, 76)
@@ -48,12 +52,13 @@ def add_textbox(
     w,
     h,
     text="",
-    font_size=18,
+    font_size=BODY_SIZE,
     bold=False,
     color=INK,
     align=PP_ALIGN.LEFT,
     valign=MSO_ANCHOR.TOP,
     margin=0.06,
+    font_name=FONT,
 ):
     box = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
     frame = box.text_frame
@@ -67,7 +72,7 @@ def add_textbox(
     paragraph = frame.paragraphs[0]
     paragraph.text = str(text)
     paragraph.alignment = align
-    paragraph.font.name = FONT
+    paragraph.font.name = font_name
     paragraph.font.size = Pt(font_size)
     paragraph.font.bold = bold
     paragraph.font.color.rgb = color
@@ -84,7 +89,7 @@ def add_rect(slide, x, y, w, h, fill=WHITE, line=LINE, radius=False):
     return shape
 
 
-def add_bullets(slide, x, y, w, h, bullets, font_size=13.5, gap=5):
+def add_bullets(slide, x, y, w, h, bullets, font_size=BODY_SIZE, gap=7):
     box = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
     frame = box.text_frame
     frame.clear()
@@ -96,6 +101,7 @@ def add_bullets(slide, x, y, w, h, bullets, font_size=13.5, gap=5):
     for index, bullet in enumerate(bullets):
         paragraph = frame.paragraphs[0] if index == 0 else frame.add_paragraph()
         paragraph.text = f"•  {bullet}"
+        paragraph.alignment = PP_ALIGN.JUSTIFY
         paragraph.space_after = Pt(gap)
         paragraph.font.name = FONT
         paragraph.font.size = Pt(font_size)
@@ -103,10 +109,56 @@ def add_bullets(slide, x, y, w, h, bullets, font_size=13.5, gap=5):
     return box
 
 
+def add_paragraphs(
+    slide,
+    x,
+    y,
+    w,
+    h,
+    paragraphs,
+    font_size=BODY_SIZE,
+    gap=7,
+    color=INK,
+    valign=MSO_ANCHOR.TOP,
+    margin=0.03,
+):
+    box = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
+    frame = box.text_frame
+    frame.clear()
+    frame.word_wrap = True
+    frame.margin_left = Inches(margin)
+    frame.margin_right = Inches(margin)
+    frame.margin_top = Inches(margin)
+    frame.margin_bottom = Inches(margin)
+    frame.vertical_anchor = valign
+    for index, value in enumerate(paragraphs):
+        paragraph = frame.paragraphs[0] if index == 0 else frame.add_paragraph()
+        paragraph.text = str(value)
+        paragraph.alignment = PP_ALIGN.JUSTIFY
+        paragraph.space_after = Pt(gap if index < len(paragraphs) - 1 else 0)
+        paragraph.font.name = FONT
+        paragraph.font.size = Pt(font_size)
+        paragraph.font.color.rgb = color
+    return box
+
+
 def add_header(slide, title, number=None):
-    add_rect(slide, 0.42, 0.14, 9.16, 0.77, fill=PALE_GREEN, line=LINE)
+    add_rect(slide, 0.42, 0.12, 9.16, 0.82, fill=PALE_GREEN, line=LINE)
     label = f"{number}  {title}" if number is not None else title
-    add_textbox(slide, 0.55, 0.23, 8.75, 0.53, label, 24, True, INK, valign=MSO_ANCHOR.MIDDLE)
+    add_textbox(
+        slide,
+        0.55,
+        0.16,
+        8.75,
+        0.7,
+        label,
+        TITLE_SIZE,
+        False,
+        INK,
+        valign=MSO_ANCHOR.MIDDLE,
+        margin=0.01,
+        font_name=TITLE_FONT,
+    )
 
 
 def source_footer(item):
@@ -125,7 +177,19 @@ def add_cover(prs: Presentation, report: dict[str, Any]):
     slide.background.fill.solid()
     slide.background.fill.fore_color.rgb = WHITE
     add_rect(slide, 0.55, 0.55, 8.9, 1.02, fill=PALE_GREEN, line=LINE)
-    add_textbox(slide, 0.82, 0.73, 8.35, 0.62, report["title"], 30, True, INK, valign=MSO_ANCHOR.MIDDLE)
+    add_textbox(
+        slide,
+        0.82,
+        0.67,
+        8.35,
+        0.74,
+        report["title"],
+        TITLE_SIZE,
+        False,
+        INK,
+        valign=MSO_ANCHOR.MIDDLE,
+        font_name=TITLE_FONT,
+    )
     add_textbox(slide, 0.8, 2.65, 8.4, 0.7, report["period"], 23, False, GREEN, align=PP_ALIGN.CENTER)
     add_textbox(slide, 0.8, 4.72, 8.4, 0.45, "近两周教育行业重要资本事件与行业动态", 15, False, MUTED, align=PP_ALIGN.CENTER)
     add_rect(slide, 2.75, 5.58, 4.5, 0.06, fill=GREEN, line=GREEN)
@@ -188,35 +252,62 @@ def add_updates_slide(prs: Presentation, report: dict[str, Any]):
     add_header(slide, "本期主要动态")
     y = 1.16
     for group in digest_groups(report):
-        add_textbox(slide, 0.72, y, 2.4, 0.34, f"【{group['name']}】", 12.5, True, INK)
-        bullet_height = max(0.5, len(group["items"]) * 0.5)
+        add_textbox(slide, 0.72, y, 2.4, 0.38, f"【{group['name']}】", BODY_SIZE, False, INK)
+        bullet_height = max(0.7, len(group["items"]) * 0.82)
         add_bullets(
             slide,
             0.92,
-            y + 0.36,
+            y + 0.4,
             8.25,
             bullet_height,
             [item["headline"] for item in group["items"]],
-            11.0,
-            3,
+            BODY_SIZE,
+            7,
         )
-        y += 0.36 + bullet_height + 0.18
+        y += 0.4 + bullet_height + 0.12
+
+
+def vertical_label_text(value):
+    tokens = re.findall(r"[A-Za-z0-9]+|[^\s]", str(value))
+    return "\n".join(tokens)
 
 
 def add_analysis_box(slide, item, x, y, w, h):
     add_rect(slide, x, y, w, h, fill=VERY_PALE_GREEN, line=LINE)
-    add_textbox(slide, x + 0.12, y + 0.08, 1.05, 0.28, "行业判断", 11, True, GREEN)
-    add_textbox(slide, x + 1.05, y + 0.05, w - 1.18, h - 0.42, item["analysis"], 10.5, False, INK, valign=MSO_ANCHOR.MIDDLE)
-    impact = "受益：{}  ｜  风险：{}".format(
-        "、".join(item["beneficiaries"]),
-        "、".join(item["risks"]),
+    add_paragraphs(
+        slide,
+        x + 0.14,
+        y + 0.08,
+        w - 0.28,
+        h - 0.16,
+        [
+            f"行业判断：{item['analysis']}",
+            f"受益：{'、'.join(item['beneficiaries'])}",
+            f"风险：{'、'.join(item['risks'])}",
+        ],
+        BODY_SIZE,
+        4,
+        INK,
+        MSO_ANCHOR.MIDDLE,
+        margin=0.03,
     )
-    add_textbox(slide, x + 1.05, y + h - 0.35, w - 1.18, 0.28, impact, 8.8, False, MUTED, valign=MSO_ANCHOR.MIDDLE)
 
 
 def add_background_box(slide, item, x, y, w, h):
-    add_textbox(slide, x, y, 0.9, h, "主体背景", 9.5, True, GREEN, valign=MSO_ANCHOR.MIDDLE)
-    add_textbox(slide, x + 0.86, y, w - 0.86, h, item["background"], 9.5, False, MUTED, valign=MSO_ANCHOR.MIDDLE)
+    add_textbox(
+        slide,
+        x,
+        y,
+        w,
+        h,
+        f"主体背景：{item['background']}",
+        BODY_SIZE,
+        False,
+        INK,
+        align=PP_ALIGN.JUSTIFY,
+        valign=MSO_ANCHOR.MIDDLE,
+        margin=0.03,
+    )
 
 
 def add_evidence_table(slide, evidence, x, y, w, h):
@@ -252,17 +343,85 @@ def add_evidence_table(slide, evidence, x, y, w, h):
             for paragraph in cell.text_frame.paragraphs:
                 paragraph.alignment = PP_ALIGN.CENTER
                 paragraph.font.name = FONT
-                paragraph.font.size = Pt(9.5)
+                paragraph.font.size = Pt(BODY_SIZE)
                 paragraph.font.color.rgb = INK
                 if row_index == 0:
-                    paragraph.font.bold = True
+                    paragraph.font.bold = False
+
+
+def add_financing_content(slide, item):
+    details = item["financing_details"]
+    funding = [
+        f"投融资：{details['round']}；{details['amount']}（{details['currency']}）；"
+        f"投资方：{'、'.join(details['investors'])}。",
+        f"资金用途：{'、'.join(details['fund_use'])}。",
+        f"业务定位：{details['business_positioning']}；领域：{details['business_domain']}；"
+        f"{details['customer_side']}；{details['delivery_mode']}；"
+        f"{details['offering_type']}；用户类型：{details['user_type']}。",
+    ]
+    company = [
+        f"公司概况：成立于{details['founded_at']}；用户{details['users']}；门店{details['stores']}；"
+        f"直营/加盟：{details['store_model']}；此前投资方：{'、'.join(details['prior_investors'])}。",
+        f"财务情况：流水{details['gross_billing']}；营收{details['revenue']}；利润{details['profit']}。",
+    ]
+    add_paragraphs(slide, 1.85, 1.48, 7.45, 2.08, funding, BODY_SIZE, 6)
+    add_paragraphs(slide, 1.85, 3.64, 7.45, 1.16, company, BODY_SIZE, 5)
+    add_analysis_box(slide, item, 1.82, 4.9, 7.5, 1.72)
+
+
+def add_cooperation_content(slide, item):
+    details = item["cooperation_details"]
+    cooperation = [
+        f"合作主体：{'、'.join(details['parties'])}；主体类型：{'、'.join(details['party_types'])}。",
+        f"新增动作：{details['action_type']}；内容：{details['cooperation_content']}。",
+        f"业务/学校：{details['business_or_school']}；地区：{details['location']}。",
+    ]
+    execution = [
+        f"实施计划：{details['implementation_plan']}。",
+        f"商业化路径：{details['commercialization']}。",
+    ]
+    add_paragraphs(slide, 1.85, 1.48, 7.45, 2.1, cooperation, BODY_SIZE, 6)
+    add_paragraphs(slide, 1.85, 3.68, 7.45, 1.12, execution, BODY_SIZE, 6)
+    add_analysis_box(slide, item, 1.82, 4.9, 7.5, 1.72)
+
+
+def add_policy_content(slide, item):
+    details = item["policy_details"]
+    source = [
+        f"政策来源：{details['issuing_body']}；《{details['policy_name']}》；"
+        f"发布于{details['issued_at']}；生效时间：{details['effective_at']}。",
+        f"执行范围：{details['scope_level']}，{details['scope_description']}。",
+    ]
+    clause_parts = []
+    if details["prohibited_rules"]:
+        clause_parts.append(f"禁止性规定：{'；'.join(details['prohibited_rules'])}。")
+    if details["restrictive_requirements"]:
+        clause_parts.append(f"限制性要求：{'；'.join(details['restrictive_requirements'])}。")
+    if details["supportive_measures"]:
+        clause_parts.append(f"倡导性/支持性内容：{'；'.join(details['supportive_measures'])}。")
+    add_paragraphs(slide, 1.85, 1.48, 7.45, 1.24, source, BODY_SIZE, 6)
+    add_paragraphs(slide, 1.85, 2.8, 7.45, 1.74, clause_parts, BODY_SIZE, 6)
+    add_analysis_box(slide, item, 1.82, 4.64, 7.5, 1.98)
+
+
+def add_generic_content(slide, item):
+    evidence = item.get("evidence_table")
+    if evidence:
+        add_bullets(slide, 1.85, 1.48, 7.48, 1.5, item["facts"][:3], BODY_SIZE, 5)
+        add_evidence_table(slide, evidence, 1.95, 3.08, 7.25, 1.22)
+        add_analysis_box(slide, item, 1.82, 4.42, 7.5, 2.2)
+    else:
+        add_bullets(slide, 1.85, 1.48, 7.48, 1.96, item["facts"], BODY_SIZE, 6)
+        add_background_box(slide, item, 1.85, 3.54, 7.45, 0.9)
+        add_analysis_box(slide, item, 1.82, 4.54, 7.5, 2.08)
 
 
 def add_item_slide(prs: Presentation, section_name: str, item: dict[str, Any], number: int):
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     slide.background.fill.solid()
     slide.background.fill.fore_color.rgb = WHITE
-    add_header(slide, section_name, number)
+    display_section = str(section_name).replace("行业速览-", "行业速览 - ")
+    add_header(slide, display_section, number)
 
     add_rect(slide, 0.45, 1.02, 1.08, 5.92, fill=PALE_GREEN, line=LINE)
     add_textbox(
@@ -271,9 +430,9 @@ def add_item_slide(prs: Presentation, section_name: str, item: dict[str, Any], n
         1.19,
         0.88,
         5.55,
-        item["short_title"],
-        15,
-        True,
+        vertical_label_text(item["short_title"]),
+        SIDE_LABEL_SIZE,
+        False,
         INK,
         align=PP_ALIGN.CENTER,
         valign=MSO_ANCHOR.MIDDLE,
@@ -284,16 +443,14 @@ def add_item_slide(prs: Presentation, section_name: str, item: dict[str, Any], n
     metadata = f"主体：{item['subject']}  ｜  日期：{item['event_date']}  ｜  类型：{item['event_type']}"
     add_textbox(slide, 1.85, 1.12, 7.45, 0.28, metadata, 9.5, True, GREEN, valign=MSO_ANCHOR.MIDDLE)
 
-    evidence = item.get("evidence_table")
-    if evidence:
-        add_bullets(slide, 1.85, 1.48, 7.48, 0.96, item["facts"][:3], 10.0, 2)
-        add_background_box(slide, item, 1.9, 2.5, 7.35, 0.42)
-        add_evidence_table(slide, evidence, 2.0, 3.0, 7.15, 1.2)
-        add_analysis_box(slide, item, 1.86, 4.38, 7.45, 1.98)
+    if item.get("financing_details"):
+        add_financing_content(slide, item)
+    elif item.get("cooperation_details"):
+        add_cooperation_content(slide, item)
+    elif item.get("policy_details"):
+        add_policy_content(slide, item)
     else:
-        add_bullets(slide, 1.85, 1.5, 7.46, 2.12, item["facts"], 10.0, 5)
-        add_background_box(slide, item, 1.9, 3.73, 7.35, 0.48)
-        add_analysis_box(slide, item, 1.86, 4.38, 7.45, 1.98)
+        add_generic_content(slide, item)
 
     source = source_footer(item)
     add_textbox(slide, 0.5, 7.05, 7.5, 0.24, f"来源：{source}", 8.5, False, MUTED, valign=MSO_ANCHOR.MIDDLE)
@@ -307,7 +464,19 @@ def add_summary_slide(prs: Presentation, report: dict[str, Any]):
     slide.background.fill.fore_color.rgb = WHITE
     add_header(slide, "本期行业小结")
     add_rect(slide, 0.72, 1.35, 8.56, 3.35, fill=VERY_PALE_GREEN, line=LINE)
-    add_textbox(slide, 1.0, 1.7, 8.0, 2.65, report["weekly_judgment"], 17, False, INK, valign=MSO_ANCHOR.MIDDLE)
+    add_textbox(
+        slide,
+        1.0,
+        1.7,
+        8.0,
+        2.65,
+        report["weekly_judgment"],
+        BODY_SIZE,
+        False,
+        INK,
+        align=PP_ALIGN.JUSTIFY,
+        valign=MSO_ANCHOR.MIDDLE,
+    )
     event_count = sum(1 for _section_name, _item in iter_events(report))
     add_textbox(slide, 0.8, 5.28, 8.4, 0.45, f"本期共纳入 {event_count} 项经核验行业动态", 16, True, GREEN, align=PP_ALIGN.CENTER)
     categories = "  ｜  ".join(group["name"] for group in digest_groups(report))
@@ -366,6 +535,21 @@ def self_test_spec() -> dict[str, Any]:
                     "source_url": f"https://www.moe.gov.cn/self-test/{index}",
                 },
                 "background": "该主体已具备教育产品、客户或政策执行基础，本事项用于验证研究字段和版式容量。",
+                "policy_details": (
+                    {
+                        "issuing_body": f"自检主管部门 {index}",
+                        "policy_name": f"自检教育政策 {index}",
+                        "issued_at": f"2026-07-0{index}",
+                        "effective_at": f"2026-07-0{index}",
+                        "scope_level": "地方性",
+                        "scope_description": "适用于自检地区教育机构和学校。",
+                        "prohibited_rules": ["禁止违反规定开展教育服务"],
+                        "restrictive_requirements": ["按要求完成备案和信息披露"],
+                        "supportive_measures": ["支持符合条件的教育数字化应用"],
+                    }
+                    if index % 2 == 0
+                    else None
+                ),
                 "facts": [
                     "该事项披露了明确的主体、时间和新增动作。",
                     "公开材料提供了产品、客户或政策执行信息。",

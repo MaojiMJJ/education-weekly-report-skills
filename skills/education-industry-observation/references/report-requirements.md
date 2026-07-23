@@ -47,7 +47,15 @@
 - 产品形态、商业模式、线上或线下、硬件或服务。
 - 轮次、金额、币种、投资方和历史融资。
 - 用户、学校、门店、收入、利润或其他已披露进展。
+- 正文数据使用 `financing_details`：`amount`、`round`、`currency`、`investors`、`fund_use`、`business_positioning`、`business_domain`、`customer_side`、`delivery_mode`、`offering_type`、`user_type`、`founded_at`、`users`、`stores`、`store_model`、`gross_billing`、`prior_investors`、`revenue`、`profit`。
+- 所有固定字段必须出现；来源未披露时填写“未披露”，不得留空或推算。
 - 日期口径：以融资宣布或完成、交易签约或完成、IPO递交或受理、正式上市日期为准。
+
+### 业务合作、新业务与学校筹设
+
+- 覆盖教育公司、培训机构、教育信息化公司、院校等主体的新业务、新合作、新学校筹备或设立。
+- 正文数据使用 `cooperation_details`：`parties`、`party_types`、`action_type`、`cooperation_content`、`business_or_school`、`location`、`implementation_plan`、`commercialization`。
+- 合作必须有本期新增动作和可核验内容；只有签约仪式、活动合影或泛化战略表述时排除。
 
 ### AI+教育
 
@@ -59,9 +67,20 @@
 ### 政策与监管
 
 - 发布机关、文件名称、发布日期、实施时间和直接条款。
-- 区分倡议、试点、强制要求、资金安排和采购落地。
+- 正文数据使用 `policy_details`：`issuing_body`、`policy_name`、`issued_at`、`effective_at`、`scope_level`、`scope_description`、`prohibited_rules`、`restrictive_requirements`、`supportive_measures`。
+- `scope_level` 只写“全国性”或“地方性”；三个条款列表允许某类为空，但合计必须至少有一条可直接核验的核心条款。
+- 区分禁止性规定、限制性要求、倡导性或支持性内容，并进一步识别试点、强制要求、资金安排和采购落地。
 - 说明影响学校、企业、家长、学生或监管对象的具体机制。
 - 日期口径：以文件发布、正式决定或生效日期为准；本期解读旧政策不算新政策。
+
+## PPT 格式
+
+- 页面比例：4:3。
+- 顶部标题栏：楷体 36 号。
+- 左侧标签：楷体 18 号，文字竖向排列。
+- 正文内容区：楷体 16 号，分段留白，两端对齐。
+- 元数据、来源页脚和价值评分属于辅助信息，可使用较小字号；事件事实、主体情况、政策条款和行业判断不得低于 16 号。
+- 内容超出页面容量时先压缩表述、减少重复背景或调整区块高度，不得缩小规定字号。
 
 ## 推荐栏目
 

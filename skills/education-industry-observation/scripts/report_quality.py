@@ -97,6 +97,60 @@ TRIGGER_ACTION_TERMS = {
 
 RETROSPECTIVE_TRIGGER_MARKERS = ("盘点", "回顾", "汇总", "历史梳理")
 
+FINANCING_TEXT_FIELDS = (
+    "amount",
+    "round",
+    "currency",
+    "business_positioning",
+    "business_domain",
+    "customer_side",
+    "delivery_mode",
+    "offering_type",
+    "user_type",
+    "founded_at",
+    "users",
+    "stores",
+    "store_model",
+    "gross_billing",
+    "revenue",
+    "profit",
+)
+
+FINANCING_LIST_FIELDS = (
+    "investors",
+    "fund_use",
+    "prior_investors",
+)
+
+COOPERATION_TEXT_FIELDS = (
+    "action_type",
+    "cooperation_content",
+    "business_or_school",
+    "location",
+    "implementation_plan",
+    "commercialization",
+)
+
+COOPERATION_LIST_FIELDS = (
+    "parties",
+    "party_types",
+)
+
+POLICY_TEXT_FIELDS = (
+    "issuing_body",
+    "policy_name",
+    "issued_at",
+    "effective_at",
+    "scope_level",
+    "scope_description",
+)
+
+POLICY_LIST_FIELDS = (
+    "prohibited_rules",
+    "restrictive_requirements",
+    "supportive_measures",
+)
+
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 PERIOD_PATTERN = re.compile(
     r"^(\d{4})[.-](\d{2})[.-](\d{2})\s*-\s*(\d{4})[.-](\d{2})[.-](\d{2})$"
@@ -250,6 +304,99 @@ def _check_public_output_markers(issues, label, value):
             break
 
 
+def _validate_required_text_fields(issues, item_id, object_name, value, field_names):
+    if not isinstance(value, dict):
+        issues.append(f"事项 {item_id} 必须包含 {object_name}")
+        return None
+    for field in field_names:
+        _check_text(
+            issues,
+            f"事项 {item_id} 的 {object_name}.{field}",
+            value.get(field),
+            2,
+            120,
+        )
+    return value
+
+
+def _validate_financing_details(issues, item_id, details):
+    details = _validate_required_text_fields(
+        issues,
+        item_id,
+        "financing_details",
+        details,
+        FINANCING_TEXT_FIELDS,
+    )
+    if details is None:
+        return
+    for field in FINANCING_LIST_FIELDS:
+        _validate_list(
+            issues,
+            item_id,
+            f"financing_details.{field}",
+            details.get(field),
+            1,
+            5,
+            45,
+        )
+
+
+def _validate_cooperation_details(issues, item_id, details):
+    details = _validate_required_text_fields(
+        issues,
+        item_id,
+        "cooperation_details",
+        details,
+        COOPERATION_TEXT_FIELDS,
+    )
+    if details is None:
+        return
+    for field in COOPERATION_LIST_FIELDS:
+        _validate_list(
+            issues,
+            item_id,
+            f"cooperation_details.{field}",
+            details.get(field),
+            1,
+            5,
+            45,
+        )
+
+
+def _validate_policy_details(issues, item_id, details):
+    details = _validate_required_text_fields(
+        issues,
+        item_id,
+        "policy_details",
+        details,
+        POLICY_TEXT_FIELDS,
+    )
+    if details is None:
+        return
+
+    if details.get("scope_level") not in {"全国性", "地方性"}:
+        issues.append(f"事项 {item_id} 的 policy_details.scope_level 必须是全国性或地方性")
+
+    clause_count = 0
+    for field in POLICY_LIST_FIELDS:
+        value = details.get(field)
+        if not isinstance(value, list):
+            issues.append(f"事项 {item_id} 的 policy_details.{field} 必须是列表")
+            continue
+        _validate_list(
+            issues,
+            item_id,
+            f"policy_details.{field}",
+            value,
+            0,
+            5,
+            80,
+        )
+        clause_count += sum(1 for entry in value if _is_text(entry))
+    if clause_count < 1:
+        issues.append(f"事项 {item_id} 的政策核心条款至少需要 1 条")
+
+
 def _allowed_trigger_types(event_type):
     normalized = str(event_type or "").strip().lower()
     for keywords, allowed in EVENT_TRIGGER_RULES:
@@ -306,6 +453,10 @@ def validate_report(report):
     if not isinstance(sections, list) or not sections:
         issues.append("报告必须包含非空 sections")
         sections = []
+    is_vocational_report = "职业教育" in str(report.get("title") or "") or any(
+        isinstance(section, dict) and str(section.get("name") or "").startswith("职业教育-")
+        for section in sections
+    )
 
     events = list(iter_events(report))
     if len(events) < 5:
@@ -340,6 +491,9 @@ def validate_report(report):
                 "analysis": item.get("analysis"),
                 "beneficiaries": item.get("beneficiaries"),
                 "risks": item.get("risks"),
+                "financing_details": item.get("financing_details"),
+                "cooperation_details": item.get("cooperation_details"),
+                "policy_details": item.get("policy_details"),
             },
         )
 
@@ -348,7 +502,7 @@ def validate_report(report):
         _check_text(issues, f"事项 {item_id} 的 short_title", item.get("short_title"), 4, 28)
         _check_text(issues, f"事项 {item_id} 的 subject", item.get("subject"), 2, 80)
         _check_text(issues, f"事项 {item_id} 的 event_type", item.get("event_type"), 2, 20)
-        _check_text(issues, f"事项 {item_id} 的 background", item.get("background"), 20, 140)
+        _check_text(issues, f"事项 {item_id} 的 background", item.get("background"), 20, 100)
 
         event_date = _parse_iso_date(item.get("event_date"))
         if not event_date:
@@ -389,19 +543,34 @@ def validate_report(report):
         if not _valid_url(trigger_url):
             issues.append(f"事项 {item_id} 的触发来源 URL 无效")
 
+        if not is_vocational_report:
+            normalized_event_type = str(item.get("event_type") or "").strip().lower()
+            if any(keyword in normalized_event_type for keyword in ("融资", "投融资")):
+                _validate_financing_details(issues, item_id, item.get("financing_details"))
+            if any(
+                keyword in normalized_event_type
+                for keyword in ("业务合作", "新业务", "学校筹备", "学校设立", "新学校", "合作")
+            ):
+                _validate_cooperation_details(issues, item_id, item.get("cooperation_details"))
+            if (
+                any(keyword in normalized_event_type for keyword in ("政策", "监管", "法规"))
+                or trigger_type in {"policy_issued", "policy_effective"}
+            ):
+                _validate_policy_details(issues, item_id, item.get("policy_details"))
+
         facts = item.get("facts")
-        _validate_list(issues, item_id, "facts", facts, 3, 5, 140)
-        if isinstance(facts, list) and sum(len(str(value)) for value in facts) > 360:
-            issues.append(f"事项 {item_id} 的 facts 总长度不得超过 360 字")
-        _check_text(issues, f"事项 {item_id} 的 analysis", item.get("analysis"), 20, 160)
+        _validate_list(issues, item_id, "facts", facts, 3, 5, 90)
+        if isinstance(facts, list) and sum(len(str(value)) for value in facts) > 240:
+            issues.append(f"事项 {item_id} 的 facts 总长度不得超过 240 字")
+        _check_text(issues, f"事项 {item_id} 的 analysis", item.get("analysis"), 20, 120)
         beneficiaries = item.get("beneficiaries")
         risks = item.get("risks")
         _validate_list(issues, item_id, "beneficiaries", beneficiaries, 1, 3, 45)
         _validate_list(issues, item_id, "risks", risks, 1, 3, 45)
         if isinstance(beneficiaries, list) and isinstance(risks, list):
             impact_length = sum(len(str(value)) for value in beneficiaries + risks)
-            if impact_length > 120:
-                issues.append(f"事项 {item_id} 的受益方和风险合计不得超过 120 字")
+            if impact_length > 90:
+                issues.append(f"事项 {item_id} 的受益方和风险合计不得超过 90 字")
         _check_text(issues, f"事项 {item_id} 的 tracking", item.get("tracking"), 10, 70)
 
         scores = item.get("scores")

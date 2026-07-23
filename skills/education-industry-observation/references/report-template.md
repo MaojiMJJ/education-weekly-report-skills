@@ -39,6 +39,27 @@
             "source_url": "https://www.cninfo.com.cn/new/disclosure/detail/education-round"
           },
           "background": "20-140字主体背景，说明业务、客户、历史和本次事项的上下文。",
+          "financing_details": {
+            "amount": "近千万元",
+            "round": "天使轮",
+            "currency": "人民币",
+            "investors": ["投资方甲"],
+            "fund_use": ["产品研发", "市场推广"],
+            "business_positioning": "大学生备考教育Agent",
+            "business_domain": "大学生考试培训",
+            "customer_side": "C端为主，兼有B端SaaS",
+            "delivery_mode": "线上",
+            "offering_type": "软件与服务",
+            "user_type": "成人",
+            "founded_at": "2025年",
+            "users": "未披露",
+            "stores": "不适用",
+            "store_model": "不适用",
+            "gross_billing": "未披露",
+            "prior_investors": ["未披露"],
+            "revenue": "未披露",
+            "profit": "未披露"
+          },
           "facts": ["事实一", "事实二", "事实三"],
           "analysis": "说明事件改变的行业变量、趋势和影响机制。",
           "beneficiaries": ["受益方及机制"],
@@ -87,6 +108,14 @@
 }
 ```
 
+按事项类型使用以下附加对象：
+
+- 融资：必须填写 `financing_details` 示例中的全部字段。
+- 业务合作、新业务、新学校筹备或设立：填写 `cooperation_details`，字段为 `parties`、`party_types`、`action_type`、`cooperation_content`、`business_or_school`、`location`、`implementation_plan`、`commercialization`。
+- 政策或监管：填写 `policy_details`，字段为 `issuing_body`、`policy_name`、`issued_at`、`effective_at`、`scope_level`、`scope_description`、`prohibited_rules`、`restrictive_requirements`、`supportive_measures`。
+
+附加对象进入公开事件页。未披露字段使用“未披露”；不适用字段使用“不适用”。不能省略字段、使用空字符串或根据其他数据推算。
+
 `evidence_table` 可选，只在名单、交易条款、数据对比或政策清单比文字更清楚时使用。表格限 2-4 列、1-3 行；2 列每格最多 20 字，3 列最多 12 字，4 列最多 8 字。
 
 每个事项至少包含 1 个 `is_primary: true` 的一手来源或原创直接来源。`access_checked_at` 必须是实际打开页面的日期，且不得早于 `published_at`；保留域名、占位链接和搜索摘要不能标记为已核验。
@@ -101,7 +130,9 @@
 - `sections` 的栏目名和 `headline` 自动生成“本期主要动态”页，最多展示 8 个正式事项。
 - 每个 `item` 生成 1 个事件页。
 - `subject`、`event_date` 和 `event_type` 进入元数据行，`period_trigger` 用于出刊前校验，`background` 进入主体背景区。
-- `facts` 进入事实区，`analysis`、`beneficiaries` 和 `risks` 进入行业判断框；`tracking` 仅保留在内部研究数据中。
+- 融资页优先渲染 `financing_details`，业务合作页优先渲染 `cooperation_details`，政策页优先渲染 `policy_details`；其他事项使用 `facts` 和 `background`。
+- `analysis`、`beneficiaries` 和 `risks` 进入行业判断区；`tracking` 仅保留在内部研究数据中。
 - `sources` 在页脚显示来源名和日期，完整 URL 进入独立来源清单。
 - `weekly_judgment` 生成“本期行业小结”页，不得包含下一期任务或内部跟踪安排。
 - `quality_review` 生成独立质量报告；任一得分低于 8 或总分低于 32 时拒绝生成。
+- 事件页顶部标题栏使用楷体 36 号，左侧短标题使用楷体 18 号竖排，正文使用楷体 16 号并两端对齐。

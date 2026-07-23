@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from pptx import Presentation
+from pptx.enum.text import PP_ALIGN
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -46,7 +47,7 @@ class EducationPptxBuilderTests(unittest.TestCase):
     def test_builds_four_by_three_research_deck_and_sources(self):
         builder = load_builder_module()
         report = load_fixture("education_valid.json")
-        report["sections"][1]["items"][1]["evidence_table"] = {
+        report["sections"][2]["items"][0]["evidence_table"] = {
             "columns": ["机构", "年检结果"],
             "rows": [["测试机构甲", "合格"], ["测试机构乙", "合格"], ["测试机构丙", "合格"]],
         }
@@ -81,7 +82,9 @@ class EducationPptxBuilderTests(unittest.TestCase):
         )
         table_shape = next(shape for shape in table_slide.shapes if getattr(shape, "has_table", False))
         analysis_label = next(
-            shape for shape in table_slide.shapes if hasattr(shape, "text") and shape.text.strip() == "行业判断"
+            shape
+            for shape in table_slide.shapes
+            if hasattr(shape, "text") and shape.text.strip().startswith("行业判断：")
         )
         self.assertLessEqual(table_shape.top + table_shape.height, analysis_label.top)
         self.assertIn(
@@ -120,21 +123,53 @@ class EducationPptxBuilderTests(unittest.TestCase):
         self.assertIn("质量报告", str(caught.exception))
         self.assertFalse(self.output.exists())
 
-    def test_facts_use_compact_font_to_avoid_punctuation_widows(self):
+    def test_uses_required_kaiti_36_18_16_typography(self):
         builder = load_builder_module()
         report = load_fixture("education_valid.json")
 
         builder.build(report, self.output, self.sources, self.quality)
 
         presentation = Presentation(self.output)
-        first_fact = report["sections"][0]["items"][0]["facts"][0]
-        facts_box = next(
+        header = next(
             shape
             for slide in presentation.slides
             for shape in slide.shapes
-            if hasattr(shape, "text") and first_fact[:-1] in shape.text
+            if hasattr(shape, "text") and shape.text.startswith("1  行业速览 - ")
         )
-        self.assertEqual(10.0, facts_box.text_frame.paragraphs[0].font.size.pt)
+        side_label = next(
+            shape
+            for slide in presentation.slides
+            for shape in slide.shapes
+            if hasattr(shape, "text")
+            and shape.text.replace("\v", "\n").startswith("AI\n备\n考")
+        )
+        body = next(
+            shape
+            for slide in presentation.slides
+            for shape in slide.shapes
+            if hasattr(shape, "text") and "投融资：" in shape.text
+        )
+
+        self.assertEqual("KaiTi", header.text_frame.paragraphs[0].font.name)
+        self.assertEqual(36.0, header.text_frame.paragraphs[0].font.size.pt)
+        self.assertEqual("KaiTi", side_label.text_frame.paragraphs[0].font.name)
+        self.assertEqual(18.0, side_label.text_frame.paragraphs[0].font.size.pt)
+        self.assertIn("\v", side_label.text)
+        self.assertEqual("KaiTi", body.text_frame.paragraphs[0].font.name)
+        self.assertEqual(16.0, body.text_frame.paragraphs[0].font.size.pt)
+        self.assertEqual(PP_ALIGN.JUSTIFY, body.text_frame.paragraphs[0].alignment)
+
+    def test_policy_page_classifies_core_clauses(self):
+        builder = load_builder_module()
+        report = load_fixture("education_valid.json")
+
+        builder.build(report, self.output, self.sources, self.quality)
+
+        presentation = Presentation(self.output)
+        all_text = "\n".join(slide_text(slide) for slide in presentation.slides)
+        self.assertIn("政策来源：测试省教育厅", all_text)
+        self.assertIn("限制性要求：", all_text)
+        self.assertIn("倡导性/支持性内容：", all_text)
 
     def test_public_deck_uses_update_digest_and_hides_internal_tracking(self):
         builder = load_builder_module()

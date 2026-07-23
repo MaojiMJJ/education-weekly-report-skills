@@ -207,6 +207,53 @@ class EducationReportQualityTests(unittest.TestCase):
 
         quality.validate_report(report)
 
+    def test_financing_requires_fixed_details(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        report["sections"][0]["items"][0].pop("financing_details")
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("financing_details", str(caught.exception))
+
+    def test_financing_requires_explicit_undisclosed_fields(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        report["sections"][0]["items"][0]["financing_details"]["profit"] = ""
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("financing_details.profit", str(caught.exception))
+
+    def test_policy_requires_source_scope_and_classified_clauses(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        item = report["sections"][1]["items"][0]
+        item["policy_details"]["scope_level"] = "区域"
+        item["policy_details"]["prohibited_rules"] = []
+        item["policy_details"]["restrictive_requirements"] = []
+        item["policy_details"]["supportive_measures"] = []
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        message = str(caught.exception)
+        self.assertIn("全国性或地方性", message)
+        self.assertIn("政策核心条款", message)
+
+    def test_business_cooperation_requires_fixed_details(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        item = report["sections"][2]["items"][0]
+        item["event_type"] = "业务合作"
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("cooperation_details", str(caught.exception))
+
     def test_accepts_policy_effective_with_older_official_source(self):
         quality = load_quality_module()
         report = load_fixture("education_valid.json")
