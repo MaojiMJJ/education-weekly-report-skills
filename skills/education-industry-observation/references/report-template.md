@@ -76,6 +76,50 @@
 
 示例 URL 只表示字段格式，正式报告必须替换为实际打开并核验的来源。
 
+## 复刻模式契约
+
+`reference_parity` 模式除报告 JSON 外，必须单独生成复刻清单；校验脚本读取下列顶层结构：
+
+```json
+{
+  "mode": "reference_parity",
+  "reference": {
+    "file": "用户提供的样稿.pdf",
+    "sha256": "64位SHA-256"
+  },
+  "expected": {
+    "page_count": 8,
+    "page_size_pts": [720, 540],
+    "required_fonts": ["KaiTi", "SimSun", "Calibri-Light"],
+    "reference_items": [
+      {
+        "reference_id": "R01",
+        "page": 2,
+        "short_title": "样稿左栏标题",
+        "content_markers": ["主体名", "关键产品或政策名", "关键数字"],
+        "event_date": "2026-06-09",
+        "date_scope": "reference_carryover",
+        "sources": [
+          {
+            "name": "直接来源",
+            "url": "https://example.gov.cn/direct-source",
+            "published_at": "2026-06-10",
+            "access_checked_at": "2026-07-23"
+          }
+        ]
+      }
+    ]
+  },
+  "output_items": [
+    {"reference_id": "R01", "page": 2}
+  ]
+}
+```
+
+`reference_items` 是样稿内容真值表；`output_items` 是成品页码映射。两个列表中的 `reference_id` 必须一一对应且只出现一次。`content_markers` 必须在指定成品页可见，不能只写进备注或来源清单。
+
+`date_scope` 只允许 `within_period` 或 `reference_carryover`。后者表示因用户明确要求复刻而保留的跨期事项，不改变真实事件日期。
+
 ## 速览对象
 
 速览对象与事件对象放在相同 `sections[].items` 中，最小结构如下：
@@ -161,3 +205,5 @@
 推荐栏目为“行业速览-上市公司”“行业速览-融资与交易”“行业速览-政策”“行业速览-AI教育”“行业速览-其他”。空栏目省略；融资与交易有合格事项时排在事件页最前。
 
 `core_insights` 和 `tracking` 只用于内部研究，不渲染到公开 PPT。
+
+`reference_parity` 不执行上述默认页面映射；它严格执行样稿逐页映射，且不得自动添加“本期主要动态”、事件深析页、本期行业小结或来源页。

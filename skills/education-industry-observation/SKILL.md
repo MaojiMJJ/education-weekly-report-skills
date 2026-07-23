@@ -7,7 +7,7 @@ description: "适用于制作中国教育行业观察、教育行业周报或双
 
 ## 工作边界
 
-生成面向领导、同事和业务人员的行业情报，不生成新闻清单。正文只收录报告期内新发生、正式披露或正式生效的事项；栏目没有合格事项时省略，不跨期补录或用弱事项凑页。
+生成面向领导、同事和业务人员的行业情报，不生成新闻清单。默认模式下，正文只收录报告期内新发生、正式披露或正式生效的事项；栏目没有合格事项时省略，不跨期补录或用弱事项凑页。
 
 默认采用“广覆盖速览 + 高价值深析”的双层结构：速览用于补足政策、学校、产品和国际合作等本期重要动态，深析用于展开至少 5 个高价值事项。两层都必须满足严格日期、直接来源和去重要求；速览不是降低证据标准的新闻摘抄。
 
@@ -28,11 +28,14 @@ description: "适用于制作中国教育行业观察、教育行业周报或双
 | 基于已核验材料起草或修改 JSON | `report-requirements.md`、`event-analysis-template.md`、`report-template.md` | 事实、日期或来源需要补查时读 `source-workflow.md` |
 | 用已有 JSON 重新生成 PPT | `report-template.md`、`quality-check.md` | JSON 未通过校验时再读对应业务要求或来源规则 |
 | 审核现有报告 | `report-requirements.md`、`report-template.md`、`quality-check.md` | 发现事实或来源问题时读 `source-workflow.md` |
+| 按用户提供的样稿复刻报告 | `sample-patterns.md`、`source-workflow.md`、`report-requirements.md`、`report-template.md`、`quality-check.md` | 涉及上市公司时读 `listed-companies.md`；同时读取演示文稿与 PDF 制作 Skill |
 | 调整 Skill 或排查历史失败 | `sample-patterns.md`、`quality-check.md` 和相关测试 | 按问题读取其他文件，不默认加载全部参考材料 |
 
 引用文件均位于 `references/`。不要把其中的详细字段、阈值或版式要求再次复制到本文件。
 
 ## 完整生成流程
+
+用户提供样稿并明确要求“看上去一样”“同事版有的内容都要有”或同等意思时，启用 `reference_parity` 复刻模式。该模式先逐页建立内容与视觉指纹，再检索公开来源；不得把任务改写成研究型扩写，也不得沿用默认生成器的卡片式结构替代样稿。样稿中的跨期事项仍须保留，但必须在来源清单中标出真实事件日期和 `reference_carryover`，不得伪装成本期新增事项。
 
 1. 确认报告期、读者和资料边界；用户未指定时，使用截至当天的最近完整双周区间。
 2. 按 `source-workflow.md` 完成各模块检索，记录查询、候选和空结果，先识别本期新增动作。
@@ -41,6 +44,8 @@ description: "适用于制作中国教育行业观察、教育行业周报或双
 5. 按 `report-requirements.md` 补齐两层事项及类型化信息，归纳内部核心观点和本期行业小结。
 6. 按 `report-template.md` 生成 JSON，再用生成器执行 `quality-check.md` 对应的自动门槛。
 7. 生成 PPT、来源清单和质量报告，使用 PowerPoint 原生导出 PDF，渲染全部页面检查溢出、黑屏、重叠、字体、来源和页码；PDF 必须实际保留楷体，不接受仅在 PPT 属性中声明楷体但导出时被替换。
+
+`reference_parity` 模式还必须生成复刻清单并运行 `scripts/validate_reference_parity.py`。样稿事项覆盖率、页码映射、页数、页面尺寸和必需字体任一不一致即返工；视觉相似度须逐页人工复核，不能用内容更多或研究更深替代。
 
 生成器校验失败时修复研究内容，不删除校验或降低阈值。事项不足时停止出刊，交付检索底稿、候选池、剔除理由和缺口说明。
 
@@ -59,4 +64,5 @@ python scripts/build_weekly_pptx.py report.json `
 - `教育行业观察_<报告期>.pdf`
 - `教育行业观察_<报告期>_来源清单.md`
 - `教育行业观察_<报告期>_质量报告.md`
+- 复刻模式增加：`教育行业观察_<报告期>_复刻清单.json` 和逐页视觉对照报告。
 - 质量未通过时：检索底稿、候选池、剔除理由和缺口说明，不交付伪完整 PPT。
