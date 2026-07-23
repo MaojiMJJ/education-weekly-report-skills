@@ -25,6 +25,7 @@ from report_quality import (
     SCORE_FIELDS,
     build_quality_markdown,
     build_sources_markdown,
+    iter_briefs,
     iter_events,
     validate_report,
 )
@@ -203,10 +204,14 @@ def public_section_name(name):
     return label
 
 
-def digest_groups(report, limit=8):
+def digest_groups(report, limit=12):
     groups = []
     for section_index, section in enumerate(report.get("sections") or []):
-        items = [item for item in section.get("items") or [] if item.get("content_role") == "event"]
+        items = [
+            item
+            for item in section.get("items") or []
+            if item.get("content_role") in {"event", "brief"}
+        ]
         if items:
             groups.append(
                 {
@@ -222,7 +227,13 @@ def digest_groups(report, limit=8):
     first_items = []
     for group in groups:
         first = group["items"][0]
-        first_items.append((sum(first["scores"].values()), group["section_index"], first["id"]))
+        first_items.append(
+            (
+                sum((first.get("scores") or {}).values()),
+                group["section_index"],
+                first["id"],
+            )
+        )
     for _score, _section_index, item_id in sorted(first_items, key=lambda row: (-row[0], row[1]))[:limit]:
         selected.add(item_id)
 
@@ -231,7 +242,12 @@ def digest_groups(report, limit=8):
         for item_index, item in enumerate(group["items"]):
             if item["id"] not in selected:
                 candidates.append(
-                    (sum(item["scores"].values()), group["section_index"], item_index, item["id"])
+                    (
+                        sum((item.get("scores") or {}).values()),
+                        group["section_index"],
+                        item_index,
+                        item["id"],
+                    )
                 )
     for _score, _section_index, _item_index, item_id in sorted(
         candidates, key=lambda row: (-row[0], row[1], row[2])
@@ -270,6 +286,76 @@ def add_updates_slide(prs: Presentation, report: dict[str, Any]):
 def vertical_label_text(value):
     tokens = re.findall(r"[A-Za-z0-9]+|[^\s]", str(value))
     return "\n".join(tokens)
+
+
+def end_sentence(value):
+    return str(value).rstrip("。；;") + "。"
+
+
+def add_brief_slides(prs: Presentation, report: dict[str, Any]):
+    grouped = []
+    for section in report.get("sections") or []:
+        briefs = [
+            item
+            for item in section.get("items") or []
+            if item.get("content_role") == "brief"
+        ]
+        if briefs:
+            grouped.append((public_section_name(section.get("name", "行业动态")), briefs))
+
+    for section_name, briefs in grouped:
+        for start in range(0, len(briefs), 2):
+            slide = prs.slides.add_slide(prs.slide_layouts[6])
+            slide.background.fill.solid()
+            slide.background.fill.fore_color.rgb = WHITE
+            add_header(slide, f"行业速览 - {section_name}")
+            for index, item in enumerate(briefs[start : start + 2]):
+                y = 1.2 + index * 2.88
+                add_rect(slide, 0.72, y, 8.56, 2.62, fill=VERY_PALE_GREEN, line=LINE, radius=True)
+                add_textbox(
+                    slide,
+                    0.94,
+                    y + 0.13,
+                    7.95,
+                    0.34,
+                    f"{item['short_title']}  ｜  {item['event_date']}  ｜  {item['subject']}",
+                    15,
+                    True,
+                    GREEN,
+                )
+                add_bullets(
+                    slide,
+                    1.0,
+                    y + 0.52,
+                    7.9,
+                    1.08,
+                    item["facts"],
+                    BODY_SIZE,
+                    3,
+                )
+                add_textbox(
+                    slide,
+                    1.0,
+                    y + 1.65,
+                    7.9,
+                    0.52,
+                    f"为什么重要：{item['why_it_matters']}",
+                    BODY_SIZE,
+                    False,
+                    INK,
+                    align=PP_ALIGN.JUSTIFY,
+                )
+                add_textbox(
+                    slide,
+                    1.0,
+                    y + 2.24,
+                    7.9,
+                    0.2,
+                    f"来源：{source_footer(item)}",
+                    8.5,
+                    False,
+                    MUTED,
+                )
 
 
 def add_analysis_box(slide, item, x, y, w, h):
@@ -388,17 +474,19 @@ def add_cooperation_content(slide, item):
 def add_policy_content(slide, item):
     details = item["policy_details"]
     source = [
-        f"政策来源：{details['issuing_body']}；《{details['policy_name']}》；"
-        f"发布于{details['issued_at']}；生效时间：{details['effective_at']}。",
-        f"执行范围：{details['scope_level']}，{details['scope_description']}。",
+        end_sentence(
+            f"政策来源：{details['issuing_body']}；《{details['policy_name']}》；"
+            f"发布于{details['issued_at']}；生效时间：{details['effective_at']}"
+        ),
+        end_sentence(f"执行范围：{details['scope_level']}，{details['scope_description']}"),
     ]
     clause_parts = []
     if details["prohibited_rules"]:
-        clause_parts.append(f"禁止性规定：{'；'.join(details['prohibited_rules'])}。")
+        clause_parts.append(end_sentence(f"禁止性规定：{'；'.join(details['prohibited_rules'])}"))
     if details["restrictive_requirements"]:
-        clause_parts.append(f"限制性要求：{'；'.join(details['restrictive_requirements'])}。")
+        clause_parts.append(end_sentence(f"限制性要求：{'；'.join(details['restrictive_requirements'])}"))
     if details["supportive_measures"]:
-        clause_parts.append(f"倡导性/支持性内容：{'；'.join(details['supportive_measures'])}。")
+        clause_parts.append(end_sentence(f"倡导性/支持性内容：{'；'.join(details['supportive_measures'])}"))
     add_paragraphs(slide, 1.85, 1.48, 7.45, 1.24, source, BODY_SIZE, 6)
     add_paragraphs(slide, 1.85, 2.8, 7.45, 1.74, clause_parts, BODY_SIZE, 6)
     add_analysis_box(slide, item, 1.82, 4.64, 7.5, 1.98)
@@ -478,7 +566,19 @@ def add_summary_slide(prs: Presentation, report: dict[str, Any]):
         valign=MSO_ANCHOR.MIDDLE,
     )
     event_count = sum(1 for _section_name, _item in iter_events(report))
-    add_textbox(slide, 0.8, 5.28, 8.4, 0.45, f"本期共纳入 {event_count} 项经核验行业动态", 16, True, GREEN, align=PP_ALIGN.CENTER)
+    brief_count = sum(1 for _section_name, _item in iter_briefs(report))
+    add_textbox(
+        slide,
+        0.8,
+        5.28,
+        8.4,
+        0.45,
+        f"本期共纳入 {event_count + brief_count} 项经核验行业动态，其中 {event_count} 项深度分析",
+        16,
+        True,
+        GREEN,
+        align=PP_ALIGN.CENTER,
+    )
     categories = "  ｜  ".join(group["name"] for group in digest_groups(report))
     add_textbox(slide, 0.8, 5.86, 8.4, 0.42, categories, 13, False, MUTED, align=PP_ALIGN.CENTER)
 
@@ -498,6 +598,7 @@ def build(
 
     add_cover(presentation, report)
     add_updates_slide(presentation, report)
+    add_brief_slides(presentation, report)
     number = 1
     for section_name, item in iter_events(report):
         add_item_slide(presentation, section_name, item, number)

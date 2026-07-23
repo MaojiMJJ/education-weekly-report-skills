@@ -27,6 +27,57 @@ def load_fixture(name):
     return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
 
 
+def add_broad_coverage(report):
+    report["coverage_mode"] = "broad_and_deep"
+    dates = ["2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-27"]
+    sections = [
+        ("行业速览-学校与高教", 2),
+        ("行业速览-国际教育", 1),
+        ("行业速览-AI产品", 2),
+    ]
+    number = 0
+    for section_name, count in sections:
+        items = []
+        for _ in range(count):
+            number += 1
+            event_date = dates[number - 1]
+            url = f"https://www.moe.gov.cn/test/b{number}.html"
+            items.append(
+                {
+                    "id": f"B{number}",
+                    "content_role": "brief",
+                    "headline": f"测试教育主体发布第{number}项本期教育产品动态",
+                    "short_title": f"速览动态{number}",
+                    "event_date": event_date,
+                    "subject": f"测试教育主体{number}",
+                    "event_type": "产品",
+                    "period_trigger": {
+                        "type": "product_launched",
+                        "description": f"测试教育主体于{event_date}正式发布第{number}项教育产品",
+                        "source_url": url,
+                    },
+                    "facts": [
+                        f"该主体于{event_date}正式发布教育产品。",
+                        "产品覆盖课堂教学与学习反馈两个场景。",
+                    ],
+                    "why_it_matters": "该事项补充了本期学校与教育产品供给的覆盖宽度，并提供可核验的落地动作。",
+                    "sources": [
+                        {
+                            "name": f"测试直接来源{number}",
+                            "url": url,
+                            "published_at": event_date,
+                            "source_type": "government",
+                            "is_primary": True,
+                            "access_status": "verified",
+                            "access_checked_at": "2026-07-05",
+                        }
+                    ],
+                }
+            )
+        report["sections"].append({"name": section_name, "items": items})
+    return report
+
+
 class EducationReportQualityTests(unittest.TestCase):
     def test_rejects_0709_news_digest(self):
         quality = load_quality_module()
@@ -54,6 +105,37 @@ class EducationReportQualityTests(unittest.TestCase):
 
         self.assertEqual(5, result["event_count"])
         self.assertGreaterEqual(result["minimum_score"], 16)
+
+    def test_accepts_broad_and_deep_report(self):
+        quality = load_quality_module()
+        report = add_broad_coverage(load_fixture("education_valid.json"))
+
+        result = quality.validate_report(report)
+
+        self.assertEqual(5, result["event_count"])
+        self.assertEqual(5, result["brief_count"])
+        self.assertEqual(10, result["coverage_count"])
+        self.assertIn("B1", quality.build_sources_markdown(report))
+
+    def test_rejects_broad_mode_without_enough_briefs(self):
+        quality = load_quality_module()
+        report = load_fixture("education_valid.json")
+        report["coverage_mode"] = "broad_and_deep"
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("至少需要 5 个", str(caught.exception))
+
+    def test_rejects_brief_without_why_it_matters(self):
+        quality = load_quality_module()
+        report = add_broad_coverage(load_fixture("education_valid.json"))
+        report["sections"][-1]["items"][0]["why_it_matters"] = ""
+
+        with self.assertRaises(quality.ReportQualityError) as caught:
+            quality.validate_report(report)
+
+        self.assertIn("why_it_matters", str(caught.exception))
 
     def test_rejects_low_value_event(self):
         quality = load_quality_module()

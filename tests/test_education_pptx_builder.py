@@ -34,6 +34,57 @@ def slide_text(slide):
     return "\n".join(shape.text for shape in slide.shapes if hasattr(shape, "text"))
 
 
+def add_broad_coverage(report):
+    report["coverage_mode"] = "broad_and_deep"
+    dates = ["2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-27"]
+    sections = [
+        ("行业速览-学校与高教", 2),
+        ("行业速览-国际教育", 1),
+        ("行业速览-AI产品", 2),
+    ]
+    number = 0
+    for section_name, count in sections:
+        items = []
+        for _ in range(count):
+            number += 1
+            event_date = dates[number - 1]
+            url = f"https://www.moe.gov.cn/test/b{number}.html"
+            items.append(
+                {
+                    "id": f"B{number}",
+                    "content_role": "brief",
+                    "headline": f"测试教育主体发布第{number}项本期教育产品动态",
+                    "short_title": f"速览动态{number}",
+                    "event_date": event_date,
+                    "subject": f"测试教育主体{number}",
+                    "event_type": "产品",
+                    "period_trigger": {
+                        "type": "product_launched",
+                        "description": f"测试教育主体于{event_date}正式发布第{number}项教育产品",
+                        "source_url": url,
+                    },
+                    "facts": [
+                        f"该主体于{event_date}正式发布教育产品。",
+                        "产品覆盖课堂教学与学习反馈两个场景。",
+                    ],
+                    "why_it_matters": "该事项补充了本期学校与教育产品供给的覆盖宽度，并提供可核验的落地动作。",
+                    "sources": [
+                        {
+                            "name": f"测试直接来源{number}",
+                            "url": url,
+                            "published_at": event_date,
+                            "source_type": "government",
+                            "is_primary": True,
+                            "access_status": "verified",
+                            "access_checked_at": "2026-07-05",
+                        }
+                    ],
+                }
+            )
+        report["sections"].append({"name": section_name, "items": items})
+    return report
+
+
 class EducationPptxBuilderTests(unittest.TestCase):
     def setUp(self):
         self.output = OUTPUT_DIR / "education_valid.pptx"
@@ -101,6 +152,20 @@ class EducationPptxBuilderTests(unittest.TestCase):
                 self.assertGreaterEqual(shape.top, 0)
                 self.assertLessEqual(shape.left + shape.width, presentation.slide_width)
                 self.assertLessEqual(shape.top + shape.height, presentation.slide_height)
+
+    def test_builds_broad_quick_scan_without_removing_deep_pages(self):
+        builder = load_builder_module()
+        report = add_broad_coverage(load_fixture("education_valid.json"))
+
+        builder.build(report, self.output, self.sources, self.quality)
+
+        presentation = Presentation(self.output)
+        all_text = "\n".join(slide_text(slide) for slide in presentation.slides)
+        self.assertEqual(11, len(presentation.slides))
+        self.assertIn("行业速览 - 学校与高教", all_text)
+        self.assertIn("为什么重要：", all_text)
+        self.assertEqual(5, all_text.count("价值评分"))
+        self.assertIn("B1", self.sources.read_text(encoding="utf-8"))
 
     def test_rejects_old_news_digest_before_building(self):
         builder = load_builder_module()
@@ -170,6 +235,15 @@ class EducationPptxBuilderTests(unittest.TestCase):
         self.assertIn("政策来源：测试省教育厅", all_text)
         self.assertIn("限制性要求：", all_text)
         self.assertIn("倡导性/支持性内容：", all_text)
+        self.assertNotIn("。。", all_text)
+
+    def test_includes_native_powerpoint_pdf_exporter(self):
+        exporter = BUILDER_MODULE.parent / "export_pptx_pdf.ps1"
+
+        self.assertTrue(exporter.exists())
+        exporter_text = exporter.read_text(encoding="utf-8")
+        self.assertIn("SaveAs", exporter_text)
+        self.assertIn("ppSaveAsPDF", exporter_text)
 
     def test_public_deck_uses_update_digest_and_hides_internal_tracking(self):
         builder = load_builder_module()

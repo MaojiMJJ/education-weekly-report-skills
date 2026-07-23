@@ -2,12 +2,13 @@
 
 ## 基础结构
 
-字段名使用英文，内容使用中文。正式报告至少包含 5 个事件。
+字段名使用英文，内容使用中文。正式报告至少包含 5 个深析事件；默认双层模式还须包含至少 5 个速览事项。
 
 ```json
 {
   "title": "教育行业观察",
   "period": "2026.06.22-2026.07.05",
+  "coverage_mode": "broad_and_deep",
   "core_insights": [
     {"claim": "由至少两个事项支持的内部观点", "evidence_ids": ["E1", "E2"]}
   ],
@@ -75,6 +76,42 @@
 
 示例 URL 只表示字段格式，正式报告必须替换为实际打开并核验的来源。
 
+## 速览对象
+
+速览对象与事件对象放在相同 `sections[].items` 中，最小结构如下：
+
+```json
+{
+  "id": "B1",
+  "content_role": "brief",
+  "headline": "完整速览标题",
+  "short_title": "速览短标题",
+  "event_date": "2026-06-26",
+  "subject": "事项主体",
+  "event_type": "产品",
+  "period_trigger": {
+    "type": "product_launched",
+    "description": "事项主体于2026年6月26日正式发布产品",
+    "source_url": "https://example.gov.cn/direct-source"
+  },
+  "facts": ["可核验事实一", "可核验事实二"],
+  "why_it_matters": "说明该事项补充了哪类供给、需求、政策或场景变化。",
+  "sources": [
+    {
+      "name": "来源名称",
+      "url": "https://example.gov.cn/direct-source",
+      "published_at": "2026-06-26",
+      "source_type": "government",
+      "is_primary": true,
+      "access_status": "verified",
+      "access_checked_at": "2026-07-05"
+    }
+  ]
+}
+```
+
+速览限 2-3 条事实、每条最多 80 字、合计最多 180 字；`why_it_matters` 为 15-90 字。每项最多 2 个直接来源。正式 URL 不得使用示例域名。
+
 ## 类型化对象
 
 按事项类型在事件对象中增加以下对象；字段不得缺失、为空或推算，未披露写“未披露”，不适用写“不适用”。
@@ -114,11 +151,12 @@
 ## 页面映射
 
 1. 封面：`title` 和 `period`。
-2. 本期主要动态：按非空 `sections` 的栏目名和 `headline` 自动生成，最多展示 8 项。
-3. 事件页：每个 `content_role: event` 生成一页；类型化对象优先决定正文结构。
-4. 本期行业小结：使用 `weekly_judgment`。
-5. 来源清单：完整输出 `sources`。
-6. 质量报告：使用 `quality_review`。
+2. 本期主要动态：按非空 `sections` 的栏目名和 `headline` 自动生成，双层模式最多展示 12 项。
+3. 分类速览页：每页通常展示 2 个 `content_role: brief`，包括日期、事实、“为什么重要”和来源。
+4. 事件页：每个 `content_role: event` 生成一页；类型化对象优先决定正文结构。
+5. 本期行业小结：使用 `weekly_judgment`，写明总覆盖数和深析数。
+6. 来源清单：完整输出速览与深析的 `sources`。
+7. 质量报告：使用 `quality_review`。
 
 推荐栏目为“行业速览-上市公司”“行业速览-融资与交易”“行业速览-政策”“行业速览-AI教育”“行业速览-其他”。空栏目省略；融资与交易有合格事项时排在事件页最前。
 

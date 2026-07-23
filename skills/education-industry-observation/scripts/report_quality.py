@@ -220,11 +220,23 @@ def _check_text(issues, label, value, minimum=1, maximum=None):
         issues.append(f"{label} 不得超过 {maximum} 字")
 
 
-def iter_events(report):
+def iter_items(report):
     for section in report.get("sections") or []:
         section_name = section.get("name", "") if isinstance(section, dict) else ""
         items = section.get("items") or [] if isinstance(section, dict) else []
         for item in items:
+            yield section_name, item
+
+
+def iter_events(report):
+    for section_name, item in iter_items(report):
+        if isinstance(item, dict) and item.get("content_role") == "event":
+            yield section_name, item
+
+
+def iter_briefs(report):
+    for section_name, item in iter_items(report):
+        if isinstance(item, dict) and item.get("content_role") == "brief":
             yield section_name, item
 
 
@@ -416,6 +428,131 @@ def _date_appears_in_text(value, text):
     return any(form in text for form in forms)
 
 
+def _validate_brief(
+    issues,
+    section_name,
+    item,
+    period,
+    period_start,
+    period_end,
+    source_documents,
+):
+    """校验宽覆盖速览层，确保它不是无日期、无来源的新闻摘抄。"""
+
+    item_id = item.get("id") or "未命名速览"
+    _check_internal_markers(issues, f"速览 {item_id} ", [section_name, item])
+    _check_public_output_markers(
+        issues,
+        f"速览 {item_id} 的公开字段",
+        {
+            "section": section_name,
+            "headline": item.get("headline"),
+            "facts": item.get("facts"),
+            "why_it_matters": item.get("why_it_matters"),
+        },
+    )
+    _check_text(issues, f"速览 {item_id} 的 id", item.get("id"), 1, 20)
+    _check_text(issues, f"速览 {item_id} 的 headline", item.get("headline"), 8, 62)
+    _check_text(issues, f"速览 {item_id} 的 short_title", item.get("short_title"), 4, 24)
+    _check_text(issues, f"速览 {item_id} 的 subject", item.get("subject"), 2, 80)
+    _check_text(issues, f"速览 {item_id} 的 event_type", item.get("event_type"), 2, 20)
+    _validate_list(issues, item_id, "facts", item.get("facts"), 2, 3, 80)
+    facts = item.get("facts")
+    if isinstance(facts, list) and sum(len(str(value)) for value in facts) > 180:
+        issues.append(f"速览 {item_id} 的 facts 总长度不得超过 180 字")
+    _check_text(issues, f"速览 {item_id} 的 why_it_matters", item.get("why_it_matters"), 15, 90)
+
+    event_date = _parse_iso_date(item.get("event_date"))
+    if not event_date:
+        issues.append(f"速览 {item_id} 的 event_date 必须使用有效的 YYYY-MM-DD")
+    elif period and not period_start <= event_date <= period_end:
+        issues.append(f"速览 {item_id} 的 event_date 不在报告期内")
+
+    trigger = item.get("period_trigger")
+    if not isinstance(trigger, dict):
+        issues.append(f"速览 {item_id} 必须包含 period_trigger")
+        trigger = {}
+    trigger_type = trigger.get("type")
+    if trigger_type not in PERIOD_TRIGGER_TYPES:
+        issues.append(f"速览 {item_id} 的本期触发类型无效")
+    elif trigger_type not in _allowed_trigger_types(item.get("event_type")):
+        issues.append(f"速览 {item_id} 的本期触发类型与 event_type 不匹配")
+    trigger_description = trigger.get("description")
+    _check_text(issues, f"速览 {item_id} 的 period_trigger.description", trigger_description, 12, 120)
+    if _is_text(trigger_description):
+        if any(marker in trigger_description for marker in RETROSPECTIVE_TRIGGER_MARKERS):
+            issues.append(f"速览 {item_id} 的本期触发说明不能是跨期盘点或历史回顾")
+        if event_date and not _date_appears_in_text(event_date, trigger_description):
+            issues.append(f"速览 {item_id} 的本期触发说明必须写明 event_date")
+        if trigger_type in TRIGGER_ACTION_TERMS and not any(
+            term in trigger_description for term in TRIGGER_ACTION_TERMS[trigger_type]
+        ):
+            issues.append(f"速览 {item_id} 的本期触发说明缺少具体新增动作")
+
+    trigger_url = trigger.get("source_url", "")
+    if not _valid_url(trigger_url):
+        issues.append(f"速览 {item_id} 的触发来源 URL 无效")
+
+    sources = item.get("sources")
+    if not isinstance(sources, list) or not sources:
+        issues.append(f"速览 {item_id} 必须包含 sources")
+        sources = []
+    elif len(sources) > 2:
+        issues.append(f"速览 {item_id} 的 sources 最多保留 2 个直接来源")
+
+    has_primary = False
+    has_period_source = False
+    matching_trigger_source = None
+    for source_number, source in enumerate(sources, 1):
+        if not isinstance(source, dict):
+            issues.append(f"速览 {item_id} 的 sources[{source_number}] 必须是对象")
+            continue
+        _check_text(issues, f"速览 {item_id} 的来源 name", source.get("name"), 2, 60)
+        _check_text(issues, f"速览 {item_id} 的来源 source_type", source.get("source_type"), 2, 30)
+        url = source.get("url", "")
+        if not _valid_url(url):
+            issues.append(f"速览 {item_id} 的来源 URL 必须是有效的 http/https 地址")
+        published_at = _parse_iso_date(source.get("published_at"))
+        if not published_at:
+            issues.append(f"速览 {item_id} 的来源日期必须使用有效的 YYYY-MM-DD")
+        elif period and period_start <= published_at <= period_end:
+            has_period_source = True
+        if source.get("access_status") != "verified":
+            issues.append(f"速览 {item_id} 的来源 access_status 必须是 verified")
+        checked_at = _parse_iso_date(source.get("access_checked_at"))
+        if not checked_at:
+            issues.append(f"速览 {item_id} 的来源 access_checked_at 必须使用有效的 YYYY-MM-DD")
+        elif published_at and checked_at < published_at:
+            issues.append(f"速览 {item_id} 的来源核验日期不得早于发布日期")
+        elif checked_at > date.today():
+            issues.append(f"速览 {item_id} 的来源核验日期不得晚于当前日期")
+        if not isinstance(source.get("is_primary"), bool):
+            issues.append(f"速览 {item_id} 的来源必须声明 is_primary")
+        elif source["is_primary"]:
+            has_primary = True
+        if _valid_url(url):
+            document_key = _normalise_url(url)
+            previous = source_documents.get(document_key)
+            if previous and previous != item_id:
+                issues.append(f"速览 {item_id} 与事项 {previous} 使用同一来源文件，必须合并或更换独立来源")
+            else:
+                source_documents[document_key] = item_id
+            if _valid_url(trigger_url) and document_key == _normalise_url(trigger_url):
+                matching_trigger_source = source
+
+    if not matching_trigger_source:
+        issues.append(f"速览 {item_id} 的触发来源必须出现在 sources 中")
+    elif (
+        matching_trigger_source.get("access_status") != "verified"
+        or not matching_trigger_source.get("is_primary")
+    ):
+        issues.append(f"速览 {item_id} 的触发来源必须是已核验的一手或原创直接来源")
+    if sources and not has_period_source and trigger_type != "policy_effective":
+        issues.append(f"速览 {item_id} 至少需要 1 个发布日期在报告期内的直接来源")
+    if sources and not has_primary:
+        issues.append(f"速览 {item_id} 至少需要 1 个一手来源或原创直接来源")
+
+
 def validate_report(report):
     """校验报告并返回可供生成器使用的质量摘要。"""
 
@@ -458,14 +595,38 @@ def validate_report(report):
         for section in sections
     )
 
-    events = list(iter_events(report))
+    all_items = list(iter_items(report))
+    for section_name, item in all_items:
+        if not isinstance(item, dict):
+            issues.append(f"栏目 {section_name} 中的事项必须是对象")
+            continue
+        if item.get("content_role") not in {"event", "brief"}:
+            item_id = item.get("id") or "未命名事项"
+            issues.append(f"事项 {item_id} 的 content_role 必须是 event 或 brief")
+
+    coverage_mode = report.get("coverage_mode", "deep_only")
+    if coverage_mode not in {"deep_only", "broad_and_deep"}:
+        issues.append("coverage_mode 必须是 deep_only 或 broad_and_deep")
+
+    events = [
+        (section_name, item)
+        for section_name, item in all_items
+        if isinstance(item, dict) and item.get("content_role") != "brief"
+    ]
+    briefs = list(iter_briefs(report))
     if len(events) < 5:
         issues.append("正式出刊至少需要 5 个高价值正文事项，不能用低价值信息凑数")
+    if coverage_mode == "broad_and_deep":
+        if len(briefs) < 5:
+            issues.append("broad_and_deep 模式至少需要 5 个严格核验的速览事项")
+        if len(events) + len(briefs) < 10:
+            issues.append("broad_and_deep 模式的总覆盖事项不得少于 10 个")
 
     ids = []
     source_documents = {}
     score_totals = []
     section_counts = Counter()
+    brief_section_counts = Counter()
 
     for event_number, (section_name, item) in enumerate(events, 1):
         if not isinstance(item, dict):
@@ -686,6 +847,23 @@ def validate_report(report):
         if sources and not has_primary:
             issues.append(f"事项 {item_id} 至少需要 1 个一手来源或原创直接来源")
 
+    for section_name, item in briefs:
+        item_id = item.get("id") or "未命名速览"
+        ids.append(item.get("id"))
+        brief_section_counts[section_name] += 1
+        _validate_brief(
+            issues,
+            section_name,
+            item,
+            period,
+            period_start,
+            period_end,
+            source_documents,
+        )
+
+    if coverage_mode == "broad_and_deep" and len(brief_section_counts) < 3:
+        issues.append("broad_and_deep 模式的速览事项至少覆盖 3 个栏目")
+
     clean_ids = [item_id for item_id in ids if _is_text(item_id)]
     if len(clean_ids) != len(set(clean_ids)):
         issues.append("事项 id 必须唯一")
@@ -742,6 +920,8 @@ def validate_report(report):
 
     return {
         "event_count": len(events),
+        "brief_count": len(briefs),
+        "coverage_count": len(events) + len(briefs),
         "minimum_score": min(score_totals),
         "maximum_score": max(score_totals),
         "insight_count": len(insights),
@@ -764,7 +944,9 @@ def build_sources_markdown(report):
         "| 事项ID | 事项 | 来源 | 日期 | 类型 | 一手来源 | 访问核验 | URL |",
         "| --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
-    for _section_name, item in iter_events(report):
+    for _section_name, item in iter_items(report):
+        if not isinstance(item, dict):
+            continue
         for source in item.get("sources") or []:
             lines.append(
                 "| {id} | {headline} | {name} | {date} | {kind} | {primary} | {checked} | {url} |".format(
@@ -790,6 +972,7 @@ def build_quality_markdown(report):
         f"# {report.get('title', '报告')}质量报告",
         "",
         f"报告期：{report.get('period', '')}",
+        f"深度事项：{sum(1 for _ in iter_events(report))} 个；速览事项：{sum(1 for _ in iter_briefs(report))} 个",
         f"总分：{total}/40",
         "",
         "| 维度 | 得分 | 复核理由 |",
