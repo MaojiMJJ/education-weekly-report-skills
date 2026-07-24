@@ -1,4 +1,4 @@
 interface:
-  display_name: "教育行业观察"
-  short_description: "生成含投融资、合作、政策条款和来源核验的教育双周报"
-  default_prompt: "Use $education-industry-observation 研究指定日期区间的非职教教育行业变化，补齐投融资、业务合作或政策固定字段，完成候选池、评分和事件研究卡，再按楷体36/18/16号格式生成教育行业观察 PPT、来源清单与质量报告；不满足出刊门槛时只交付检索底稿和缺口说明。"
+  display_name: "教育行业观察双周报"
+  short_description: "按固定同事版模板生成最新教育行业双周报"
+  default_prompt: "Use $education-industry-observation 计算最近完整双周，核验上市公司3项、其他3项和政策5项，并按固定8页同事版模板生成《教育行业观察》PPT、PDF、来源清单和质量报告。"

@@ -1,136 +1,222 @@
 {
   "title": "教育行业观察",
-  "period": "2026.06.22-2026.07.05",
+  "period": "2026.07.06-2026.07.19",
+  "template_id": "colleague-biweekly-v1",
   "core_insights": [
     {
-      "claim": "AI教育正在从单点工具进入课程、作业和校园服务流程",
-      "evidence_ids": ["E1", "E2", "E5"]
+      "claim": "本期教育供给同时出现上市公司产品升级与地方人工智能教育落地",
+      "evidence_ids": ["L1", "O3", "P5"]
     },
     {
-      "claim": "政策与资本同时关注可量化的学校落地和付费闭环",
-      "evidence_ids": ["E2", "E3", "E4"]
+      "claim": "政策侧继续把课程、评价和教辅管理转化为可执行要求",
+      "evidence_ids": ["P2", "P3", "P5"]
     }
   ],
   "sections": [
     {
-      "name": "行业速览-融资与交易",
+      "name": "行业速览-上市公司",
       "items": [
         {
-          "id": "E1",
-          "content_role": "event",
-          "headline": "[测试样例] AI备考平台完成天使轮融资",
-          "short_title": "AI备考平台完成天使轮融资",
-          "event_date": "2026-06-24",
-          "subject": "测试教育科技公司甲",
-          "event_type": "融资",
+          "id": "L1",
+          "slot_id": "listed_1",
+          "headline": "测试上市教育公司完成教育科技业务收购",
+          "short_title": "教育并购",
+          "event_date": "2026-07-08",
+          "date_scope": "within_period",
+          "subject": "测试上市教育公司甲",
+          "event_type": "上市公司收购",
           "period_trigger": {
-            "type": "financing_announced",
-            "description": "测试教育科技公司甲于2026年6月24日宣布完成天使轮融资",
-            "source_url": "https://www.cninfo.com.cn/new/disclosure/detail/e1"
+            "type": "transaction_signed",
+            "description": "测试上市教育公司甲于2026年7月8日正式签署教育科技业务收购协议",
+            "source_url": "https://www.hkexnews.hk/test/listed-1.pdf"
           },
-          "background": "公司面向大学生考试场景提供课程、刷题、答疑和报考服务，已积累结构化题库与知识点数据。",
-          "financing_details": {
-            "amount": "近千万元",
-            "round": "天使轮",
-            "currency": "人民币",
-            "investors": ["测试投资机构"],
-            "fund_use": ["产品研发", "市场验证"],
-            "business_positioning": "大学生备考教育Agent",
-            "business_domain": "大学生考试培训",
-            "customer_side": "C端为主，兼有B端服务",
-            "delivery_mode": "线上",
-            "offering_type": "软件与服务",
-            "user_type": "成人",
-            "founded_at": "2025年",
-            "users": "未披露",
-            "stores": "不适用",
-            "store_model": "不适用",
-            "gross_billing": "未披露",
-            "prior_investors": ["未披露"],
-            "revenue": "未披露",
-            "profit": "未披露"
-          },
-          "facts": [
-            "公司完成天使轮融资，资金用于产品研发和市场验证。",
-            "产品覆盖课程、刷题、答疑和报考信息，面向大学生考试场景。",
-            "公司披露模型已接入结构化题库和知识点数据。"
+          "bullets": [
+            "7月8日，测试上市教育公司甲公告签署教育科技业务收购协议，以现金方式取得标的公司51%股权。",
+            "标的公司面向中小学提供数字课程与教学服务，交易完成后将纳入上市公司合并报表。"
           ],
-          "analysis": "该事件说明垂直教育模型的竞争重点正在从通用问答转向内容资产、学习流程和低成本交付。",
-          "beneficiaries": ["拥有题库和教研数据的教育企业", "可提供模型与算力服务的技术公司"],
-          "risks": ["获客成本高于订阅收入", "模型准确率无法稳定覆盖长尾考试"],
-          "tracking": "跟踪下一轮融资、付费用户数和单用户获客成本。",
-          "scores": {
-            "industry_impact": 4,
-            "policy_importance": 2,
-            "commercial_value": 5,
-            "technology_relevance": 5,
-            "investment_relevance": 5
-          },
-          "score_reasons": {
-            "industry_impact": "覆盖大学生考试的完整学习流程。",
-            "policy_importance": "与政策关系有限。",
-            "commercial_value": "订阅模式和降本逻辑明确。",
-            "technology_relevance": "垂直模型与题库结合。",
-            "investment_relevance": "已发生融资且商业指标可继续验证。"
-          },
+          "analysis": "该交易扩大了上市公司在数字教育服务环节的供给能力，并形成并表后的业务协同空间。",
+          "tracking": "内部核验交易交割、并表时间和标的公司收入贡献。",
           "sources": [
             {
-              "name": "测试公司公告",
-              "url": "https://www.cninfo.com.cn/new/disclosure/detail/e1",
-              "published_at": "2026-06-24",
-              "source_type": "company",
+              "name": "港交所公告",
+              "url": "https://www.hkexnews.hk/test/listed-1.pdf",
+              "published_at": "2026-07-08",
+              "source_type": "交易所",
               "is_primary": true,
               "access_status": "verified",
-              "access_checked_at": "2026-07-05"
+              "access_checked_at": "2026-07-20"
             }
           ]
         },
         {
-          "id": "E3",
-          "content_role": "event",
-          "headline": "[测试样例] 教育上市公司收购校园服务企业",
-          "short_title": "上市公司收购校园服务企业",
-          "event_date": "2026-06-28",
-          "subject": "测试教育上市公司乙",
-          "event_type": "收购",
+          "id": "L2",
+          "slot_id": "listed_2",
+          "headline": "测试上市科技公司落地人工智能教育基地",
+          "short_title": "AI基地",
+          "event_date": "2026-07-10",
+          "date_scope": "within_period",
+          "subject": "测试上市科技公司乙",
+          "event_type": "上市公司合作",
           "period_trigger": {
-            "type": "transaction_signed",
-            "description": "测试教育上市公司乙于2026年6月28日公告收购校园服务企业控股权",
-            "source_url": "https://www.cninfo.com.cn/new/disclosure/detail/e3"
+            "type": "deployment_started",
+            "description": "测试上市科技公司乙于2026年7月10日正式启动人工智能教育基地",
+            "source_url": "https://www.sse.com.cn/test/listed-2.html"
           },
-          "background": "上市公司原有业务以课程和学校服务为主，标的公司面向基础教育学校提供校园运营服务。",
-          "facts": [
-            "上市公司公告收购校园服务企业控股权。",
-            "交易披露对价、支付方式和业绩承诺。",
-            "标的客户以基础教育学校为主。"
+          "bullets": [
+            "7月10日，测试上市科技公司乙与两所中学共同启动人工智能教育基地，首批课程覆盖初高中学生。",
+            "基地使用国产算力设备和课程平台，安排人工智能启蒙、编程实践与项目式学习。"
           ],
-          "analysis": "交易把上市公司的教育服务入口从课程扩展到校园运营，有助于提高学校客户复购和交叉销售能力。",
-          "beneficiaries": ["学校数字化服务商", "拥有渠道的教育上市公司"],
-          "risks": ["标的整合不及预期", "学校预算周期拉长"],
-          "tracking": "跟踪交割进度、并表收入和业绩承诺完成率。",
-          "scores": {
-            "industry_impact": 4,
-            "policy_importance": 2,
-            "commercial_value": 5,
-            "technology_relevance": 3,
-            "investment_relevance": 5
-          },
-          "score_reasons": {
-            "industry_impact": "影响学校服务市场竞争格局。",
-            "policy_importance": "主要为市场化交易。",
-            "commercial_value": "存在明确并表和交叉销售逻辑。",
-            "technology_relevance": "涉及校园数字化但不是纯技术交易。",
-            "investment_relevance": "交易条款和上市公司影响可量化。"
-          },
+          "analysis": "上市科技公司的算力和课程能力进入学校场景，为教育信息化业务提供了可验证的部署样本。",
+          "tracking": "内部核验覆盖学校数、课程开课量和设备采购规模。",
           "sources": [
             {
-              "name": "测试交易所公告",
-              "url": "https://www.cninfo.com.cn/new/disclosure/detail/e3",
-              "published_at": "2026-06-28",
-              "source_type": "exchange",
+              "name": "上交所公司公告",
+              "url": "https://www.sse.com.cn/test/listed-2.html",
+              "published_at": "2026-07-10",
+              "source_type": "交易所",
               "is_primary": true,
               "access_status": "verified",
-              "access_checked_at": "2026-07-05"
+              "access_checked_at": "2026-07-20"
+            }
+          ]
+        },
+        {
+          "id": "L3",
+          "slot_id": "listed_3",
+          "headline": "测试上市教育公司发布教师人工智能交互课程工具",
+          "short_title": "AI交互课",
+          "event_date": "2026-07-14",
+          "date_scope": "within_period",
+          "subject": "测试上市教育公司丙",
+          "event_type": "上市公司产品",
+          "period_trigger": {
+            "type": "product_launched",
+            "description": "测试上市教育公司丙于2026年7月14日正式发布教师人工智能交互课程工具",
+            "source_url": "https://www.cninfo.com.cn/test/listed-3.html"
+          },
+          "bullets": [
+            "7月14日，测试上市教育公司丙发布教师人工智能交互课程工具，新增数学与物理讲题功能。",
+            "教师输入课程主题后，系统生成可继续展开的知识画布，支持语音讲解、数字人互动和多层知识探索。",
+            "教师可以调整内容结构、知识点呈现方式和提示词，并在发布前审核生成结果与知识准确性。",
+            "产品把传统文章或课程转换为可交互知识画布，面向备课、课堂讲解和学生自主学习三个场景。"
+          ],
+          "analysis": "教师审核与交互式内容生成结合，使生成式人工智能从单次答题进入可编辑的课程生产流程。",
+          "tracking": "内部核验教师活跃数、课程生成量和学校采购或续费数据。",
+          "sources": [
+            {
+              "name": "深交所公司公告",
+              "url": "https://www.cninfo.com.cn/test/listed-3.html",
+              "published_at": "2026-07-14",
+              "source_type": "交易所",
+              "is_primary": true,
+              "access_status": "verified",
+              "access_checked_at": "2026-07-20"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "行业速览-其他",
+      "items": [
+        {
+          "id": "O1",
+          "slot_id": "other_1",
+          "headline": "测试内容平台正式上线全学段拍照答疑功能",
+          "short_title": "拍照答疑",
+          "event_date": "2026-07-09",
+          "date_scope": "within_period",
+          "subject": "测试内容平台",
+          "event_type": "教育产品",
+          "period_trigger": {
+            "type": "product_launched",
+            "description": "测试内容平台于2026年7月9日正式上线全学段拍照答疑功能",
+            "source_url": "https://www.test-platform.cn/news/other-1"
+          },
+          "bullets": [
+            "7月9日，测试内容平台正式上线拍照答疑功能，用户可从搜索入口拍摄或上传题目图片。",
+            "系统除给出答案外，还提供判断依据、知识点梳理、举一反三和同类题巩固内容。",
+            "产品覆盖全学段学习需求，并与平台已有的学习经验、错题整理和备考内容连接。"
+          ],
+          "analysis": "内容平台把教育搜索转化为结构化答疑流程，扩展了原有用户内容场景的服务深度。",
+          "tracking": "内部核验功能使用量、答疑准确率和学习内容留存变化。",
+          "sources": [
+            {
+              "name": "平台产品公告",
+              "url": "https://www.test-platform.cn/news/other-1",
+              "published_at": "2026-07-09",
+              "source_type": "公司",
+              "is_primary": true,
+              "access_status": "verified",
+              "access_checked_at": "2026-07-20"
+            }
+          ]
+        },
+        {
+          "id": "O2",
+          "slot_id": "other_2",
+          "headline": "测试护眼企业与教育机构推出学习场景方案",
+          "short_title": "护眼合作",
+          "event_date": "2026-07-12",
+          "date_scope": "within_period",
+          "subject": "测试护眼企业与教育机构",
+          "event_type": "业务合作",
+          "period_trigger": {
+            "type": "material_business_update",
+            "description": "测试护眼企业与教育机构于2026年7月12日正式发布学习场景护眼方案",
+            "source_url": "https://www.test-eye.cn/news/other-2"
+          },
+          "bullets": [
+            "7月12日，测试护眼企业与教育机构发布面向儿童长期学习场景的护眼方案。",
+            "双方把学习习惯培养与人工光环境研究结合，覆盖自习室、家庭书桌和课外阅读场景。",
+            "固定学习场景使用远景成像设备，把近距离纸面视距转换为等效远景成像，降低长时间近距离用眼负荷。",
+            "移动学习场景使用轻量化光学设备，在课外阅读和补习环境中提供便携式视觉防护。"
+          ],
+          "analysis": "教育服务与视觉健康产品结合，形成围绕学生学习空间的跨行业产品组合和渠道合作。",
+          "tracking": "内部核验产品销售、机构采购和真实使用时长数据。",
+          "sources": [
+            {
+              "name": "企业合作公告",
+              "url": "https://www.test-eye.cn/news/other-2",
+              "published_at": "2026-07-12",
+              "source_type": "公司",
+              "is_primary": true,
+              "access_status": "verified",
+              "access_checked_at": "2026-07-20"
+            }
+          ]
+        },
+        {
+          "id": "O3",
+          "slot_id": "other_3",
+          "headline": "测试地区发布人工智能教育全场景产品矩阵",
+          "short_title": "区域AI教育",
+          "event_date": "2026-07-16",
+          "date_scope": "within_period",
+          "subject": "测试市教育局",
+          "event_type": "区域教育部署",
+          "period_trigger": {
+            "type": "deployment_started",
+            "description": "测试市教育局于2026年7月16日正式启动人工智能教育全场景部署",
+            "source_url": "https://jyj.test-city.gov.cn/news/other-3"
+          },
+          "bullets": [
+            "7月16日，测试市教育局启动人工智能教育全场景部署，并发布由教育智脑、支撑载体和核心应用组成的产品矩阵。",
+            "教育数据中台统一数据标准、归集通道和安全管控，为师生建立动态成长画像，服务教育治理与学情分析。",
+            "支撑载体包括学习终端和校本资源平台，连接资源分发、课堂学习、作业反馈和教师原创资源共享。",
+            "首批应用覆盖个性化学习、学校专属模型和教师共创平台，已进入多所学校注册、试用和资源共建阶段。"
+          ],
+          "analysis": "区域级统一数据与终端平台把分散人工智能应用整合为可持续部署的教育数字基础设施。",
+          "tracking": "内部核验学校覆盖、活跃师生、采购预算和专属模型实际使用频次。",
+          "sources": [
+            {
+              "name": "测试市教育局",
+              "url": "https://jyj.test-city.gov.cn/news/other-3",
+              "published_at": "2026-07-16",
+              "source_type": "政府",
+              "is_primary": true,
+              "access_status": "verified",
+              "access_checked_at": "2026-07-20"
             }
           ]
         }
@@ -140,187 +226,185 @@
       "name": "行业速览-政策",
       "items": [
         {
-          "id": "E2",
-          "content_role": "event",
-          "headline": "[测试样例] 地方发布人工智能赋能教育行动方案",
-          "short_title": "地方发布AI教育行动方案",
-          "event_date": "2026-06-26",
-          "subject": "测试省教育厅",
+          "id": "P1",
+          "slot_id": "policy_1",
+          "headline": "国务院批复扩大教育和培训消费相关规划",
+          "short_title": "教育消费",
+          "event_date": "2026-07-07",
+          "date_scope": "within_period",
+          "subject": "国务院",
           "event_type": "政策",
           "period_trigger": {
             "type": "policy_issued",
-            "description": "测试省教育厅于2026年6月26日发布人工智能赋能教育行动方案",
-            "source_url": "https://www.moe.gov.cn/srcsite/A01/s7048/e2.html"
+            "description": "国务院于2026年7月7日正式发布扩大教育和培训消费相关规划批复",
+            "source_url": "https://www.gov.cn/zhengce/policy-1"
           },
-          "background": "该地区此前已开展教育数字化试点，本次方案首次把人工智能课程和教学应用纳入统一行动安排。",
-          "policy_details": {
-            "issuing_body": "测试省教育厅",
-            "policy_name": "人工智能赋能教育行动方案",
-            "issued_at": "2026-06-26",
-            "effective_at": "2026-06-26",
-            "scope_level": "地方性",
-            "scope_description": "适用于测试省中小学和高校。",
-            "prohibited_rules": [],
-            "restrictive_requirements": ["中小学按规定落实人工智能课程学时"],
-            "supportive_measures": ["高校建设人工智能通识课程和微专业"]
-          },
-          "facts": [
-            "行动方案明确中小学人工智能课程学时。",
-            "方案覆盖备课、课堂、作业和评价场景。",
-            "高校被要求建设人工智能通识课程和微专业。"
+          "bullets": [
+            "7月7日，国务院发布扩大教育和培训消费相关规划批复，明确相关时期消费领域的目标、任务和政策举措。",
+            "规划提出提升教育培训消费品质，规范非学科类培训，支持优质教育资源共享、合作办学和数字教育资源开发。"
           ],
-          "analysis": "地方政策开始给出课程、场景和实施主体，教育AI需求将从试点展示转向可采购、可验收的项目。",
-          "beneficiaries": ["课程内容提供商", "教学平台和评价产品企业"],
-          "risks": ["地方财政承压", "学校数据合规要求提高"],
-          "tracking": "跟踪项目预算、采购文件和首批试点学校名单。",
-          "scores": {
-            "industry_impact": 4,
-            "policy_importance": 5,
-            "commercial_value": 3,
-            "technology_relevance": 5,
-            "investment_relevance": 3
-          },
-          "score_reasons": {
-            "industry_impact": "覆盖多个教学环节。",
-            "policy_importance": "省级方案明确执行要求。",
-            "commercial_value": "采购空间待预算验证。",
-            "technology_relevance": "直接涉及教育AI应用。",
-            "investment_relevance": "可用于判断区域订单机会。"
-          },
+          "analysis": "政策把教育培训纳入服务消费扩容，同时强调许可、规范与优质供给并重。",
+          "tracking": "内部核验地方实施细则、许可条件和配套消费政策。",
           "sources": [
             {
-              "name": "测试省教育厅",
-              "url": "https://www.moe.gov.cn/srcsite/A01/s7048/e2.html",
-              "published_at": "2026-06-26",
-              "source_type": "government",
+              "name": "中国政府网",
+              "url": "https://www.gov.cn/zhengce/policy-1",
+              "published_at": "2026-07-07",
+              "source_type": "政府",
               "is_primary": true,
               "access_status": "verified",
-              "access_checked_at": "2026-07-05"
+              "access_checked_at": "2026-07-20"
             }
           ]
         },
         {
-          "id": "E4",
-          "content_role": "event",
-          "headline": "[测试样例] 校外培训年检继续强化合规经营",
-          "short_title": "培训年检强化合规经营",
-          "event_date": "2026-07-01",
-          "subject": "测试市教育委员会",
-          "event_type": "监管",
+          "id": "P2",
+          "slot_id": "policy_2",
+          "headline": "教育部部署加强高校基础研究体系建设",
+          "short_title": "高校科研",
+          "event_date": "2026-07-11",
+          "date_scope": "within_period",
+          "subject": "教育部",
+          "event_type": "政策",
           "period_trigger": {
-            "type": "official_data_released",
-            "description": "测试市教育委员会于2026年7月1日公布线上培训机构年度检查结果",
-            "source_url": "https://www.samr.gov.cn/zw/zfxxgk/e4.html"
+            "type": "policy_issued",
+            "description": "教育部于2026年7月11日正式部署加强高校基础研究体系建设",
+            "source_url": "https://www.moe.gov.cn/policy/policy-2"
           },
-          "background": "线上学科类培训机构需要按年度接受办学检查，检查结果直接影响许可证延续和后续经营。",
-          "policy_details": {
-            "issuing_body": "测试市教育委员会",
-            "policy_name": "线上学科类培训机构年度检查结果",
-            "issued_at": "2026-07-01",
-            "effective_at": "2026-07-01",
-            "scope_level": "地方性",
-            "scope_description": "适用于测试市线上学科类培训机构。",
-            "prohibited_rules": ["不合格机构不得以原状态继续经营"],
-            "restrictive_requirements": ["年检覆盖资质、收费、培训行为和网络安全"],
-            "supportive_measures": []
-          },
-          "facts": [
-            "主管部门公布线上学科类机构年度检查结果。",
-            "年检覆盖资质、收费、培训行为和网络安全。",
-            "不合格机构将被要求整改或依法处置。"
+          "bullets": [
+            "7月11日，教育部部署构建高校基础研究体系，提出强化研究型大学能力、区域平台和校际协同。",
+            "部署把交叉学科中心、校地合作、校企合作和人工智能赋能科研列为重点抓手。"
           ],
-          "analysis": "线上学科培训供给仍受牌照和年度检查约束，合规能力会继续决定机构能否稳定经营。",
-          "beneficiaries": ["合规经营的持牌机构", "合规技术服务商"],
-          "risks": ["续证不确定", "获客与收费规则继续收紧"],
-          "tracking": "跟踪机构续证、整改结果和后续行政处罚。",
-          "scores": {
-            "industry_impact": 4,
-            "policy_importance": 5,
-            "commercial_value": 3,
-            "technology_relevance": 2,
-            "investment_relevance": 3
-          },
-          "score_reasons": {
-            "industry_impact": "直接影响线上培训供给。",
-            "policy_importance": "年检结果决定续证。",
-            "commercial_value": "影响机构持续经营。",
-            "technology_relevance": "技术相关性较低。",
-            "investment_relevance": "可用于评估监管风险。"
-          },
+          "analysis": "高校科研政策继续强化平台化和交叉学科组织方式，并扩大人工智能工具的应用空间。",
+          "tracking": "内部核验平台名单、专项资金和高校建设进度。",
           "sources": [
             {
-              "name": "测试市教育委员会",
-              "url": "https://www.samr.gov.cn/zw/zfxxgk/e4.html",
-              "published_at": "2026-07-01",
-              "source_type": "government",
+              "name": "教育部",
+              "url": "https://www.moe.gov.cn/policy/policy-2",
+              "published_at": "2026-07-11",
+              "source_type": "政府",
               "is_primary": true,
               "access_status": "verified",
-              "access_checked_at": "2026-07-05"
+              "access_checked_at": "2026-07-20"
             }
           ]
-        }
-      ]
-    },
-    {
-      "name": "行业速览-AI教育",
-      "items": [
+        },
         {
-          "id": "E5",
-          "content_role": "event",
-          "headline": "[测试样例] 学校启动课堂智能评价平台采购",
-          "short_title": "学校采购课堂智能评价平台",
-          "event_date": "2026-07-03",
-          "subject": "测试学校集团",
-          "event_type": "采购",
+          "id": "P3",
+          "slot_id": "policy_3",
+          "headline": "测试市明确中小学教辅材料目录管理要求",
+          "short_title": "教辅目录",
+          "event_date": "2026-07-13",
+          "date_scope": "within_period",
+          "subject": "测试市教育委员会",
+          "event_type": "政策",
           "period_trigger": {
-            "type": "deployment_started",
-            "description": "测试学校集团于2026年7月3日启动课堂智能评价平台采购",
-            "source_url": "https://www.ccgp.gov.cn/cggg/dfgg/e5.htm"
+            "type": "policy_issued",
+            "description": "测试市教育委员会于2026年7月13日正式发布中小学教辅材料目录管理通知",
+            "source_url": "https://jw.test-city.gov.cn/policy/policy-3"
           },
-          "background": "学校集团已建设统一数据平台，本次采购希望把课堂分析、学情报告和教师研修接入现有教研体系。",
-          "facts": [
-            "学校集团启动课堂智能评价平台采购。",
-            "采购范围包括课堂分析、学情报告和教师研修。",
-            "项目要求平台支持校级数据治理和权限管理。"
+          "bullets": [
+            "7月13日，测试市发布高中阶段教辅材料推荐目录，要求学校按程序从目录内选用或免费提供审核材料。",
+            "通知重申购买使用自愿原则，禁止强迫订购以及任何单位进入学校宣传、推荐和推销教辅材料。"
           ],
-          "analysis": "学校采购从单一工具转向教学评价与教师发展闭环，能够接入教研流程的产品更容易形成续费。",
-          "beneficiaries": ["课堂分析平台", "教师研修服务商"],
-          "risks": ["数据采集合规", "教师使用率不足"],
-          "tracking": "跟踪中标金额、覆盖学校数和上线后的教师活跃度。",
-          "scores": {
-            "industry_impact": 4,
-            "policy_importance": 3,
-            "commercial_value": 4,
-            "technology_relevance": 4,
-            "investment_relevance": 3
-          },
-          "score_reasons": {
-            "industry_impact": "进入课堂和教研核心流程。",
-            "policy_importance": "符合教育数字化方向。",
-            "commercial_value": "存在采购和续费验证。",
-            "technology_relevance": "涉及课堂智能分析。",
-            "investment_relevance": "可验证B端商业化能力。"
-          },
+          "analysis": "目录管理与自愿购买要求同步收紧教辅进入学校的合规边界。",
+          "tracking": "内部核验目录范围、学校执行和出版社渠道变化。",
           "sources": [
             {
-              "name": "测试采购公告",
-              "url": "https://www.ccgp.gov.cn/cggg/dfgg/e5.htm",
-              "published_at": "2026-07-03",
-              "source_type": "procurement",
+              "name": "测试市教委",
+              "url": "https://jw.test-city.gov.cn/policy/policy-3",
+              "published_at": "2026-07-13",
+              "source_type": "政府",
               "is_primary": true,
               "access_status": "verified",
-              "access_checked_at": "2026-07-05"
+              "access_checked_at": "2026-07-20"
+            }
+          ]
+        },
+        {
+          "id": "P4",
+          "slot_id": "policy_4",
+          "headline": "教育部等部门部署高雅艺术进校园活动",
+          "short_title": "艺术进校园",
+          "event_date": "2026-07-15",
+          "date_scope": "within_period",
+          "subject": "教育部等部门",
+          "event_type": "政策",
+          "period_trigger": {
+            "type": "policy_issued",
+            "description": "教育部等部门于2026年7月15日正式部署高雅艺术进校园活动",
+            "source_url": "https://www.moe.gov.cn/policy/policy-4"
+          },
+          "bullets": [
+            "7月15日，教育部等部门部署高雅艺术进校园活动，面向高校和中小学组织演出、讲座、展演与艺术家进校园。",
+            "活动强调优质艺术资源进入学校，覆盖戏剧、音乐、舞蹈、戏曲和美术，并推动学校美育连接社会文化资源。"
+          ],
+          "analysis": "美育活动继续采用部门组织与社会资源协同方式扩大优质艺术内容的学校覆盖。",
+          "tracking": "内部核验承办单位、覆盖学校和活动场次。",
+          "sources": [
+            {
+              "name": "教育部美育部署",
+              "url": "https://www.moe.gov.cn/policy/policy-4",
+              "published_at": "2026-07-15",
+              "source_type": "政府",
+              "is_primary": true,
+              "access_status": "verified",
+              "access_checked_at": "2026-07-20"
+            }
+          ]
+        },
+        {
+          "id": "P5",
+          "slot_id": "policy_5",
+          "headline": "测试市发布中小学生人工智能素养评价框架",
+          "short_title": "AI素养评价",
+          "event_date": "2026-07-18",
+          "date_scope": "within_period",
+          "subject": "测试市教师教育学院",
+          "event_type": "政策",
+          "period_trigger": {
+            "type": "policy_issued",
+            "description": "测试市教师教育学院于2026年7月18日正式发布中小学生人工智能素养评价框架",
+            "source_url": "https://edu.test-city.gov.cn/policy/policy-5"
+          },
+          "bullets": [
+            "7月18日，测试市发布中小学生人工智能素养评价框架，以既有课程指南为基础建立统一评价结构。",
+            "框架设置人工智能意识、人工智能思维、应用与创新、社会责任四个维度，并细化二级指标和分学段递进水平。",
+            "配套评价包括在线交互与客观题等方式，用于识别学生表现、诊断学习困难并调整教学策略。"
+          ],
+          "analysis": "人工智能课程从内容建设进入评价标准阶段，为学校教学、诊断和区域质量监测提供共同尺度。",
+          "tracking": "内部核验试点学校、评价工具使用和课程教学调整情况。",
+          "sources": [
+            {
+              "name": "测试市教育发布",
+              "url": "https://edu.test-city.gov.cn/policy/policy-5",
+              "published_at": "2026-07-18",
+              "source_type": "政府",
+              "is_primary": true,
+              "access_status": "verified",
+              "access_checked_at": "2026-07-20"
             }
           ]
         }
       ]
     }
   ],
-  "weekly_judgment": "本期样例显示，教育行业的重要变化不在于新增了多少AI工具，而在于产品是否进入课程、作业、评价和校园服务等可持续流程。政策侧开始给出课程与应用场景，资本和上市公司则更关注能够形成付费闭环的垂直数据与学校入口。学校采购和资本交易均更重视可量化落地，单纯发布概念产品的行业价值进一步下降。",
   "quality_review": {
-    "information_quality": {"score": 9, "reason": "五个事项均有日期、主体、一手来源和可核验事实。"},
-    "analysis_depth": {"score": 8, "reason": "事件卡包含因果解释、受益方和风险分析。"},
-    "readability": {"score": 9, "reason": "页面结构固定，事实与行业判断分层呈现。"},
-    "strategic_value": {"score": 8, "reason": "结论帮助读者理解预算、采购、用户和交易变化。"}
+    "information_quality": {
+      "score": 9,
+      "reason": "十一项均包含明确日期、主体、动作、数字或条款及直接来源。"
+    },
+    "template_fidelity": {
+      "score": 9,
+      "reason": "栏目、槽位顺序、每页事项数和文本容量均按固定模板准备。"
+    },
+    "readability": {
+      "score": 8,
+      "reason": "各槽位要点数量和字数已按十六号正文容量控制。"
+    },
+    "strategic_value": {
+      "score": 8,
+      "reason": "内容组合覆盖上市公司、产品落地和政策执行变化。"
+    }
   }
 }

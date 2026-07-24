@@ -2,511 +2,139 @@ import copy
 import importlib.util
 import json
 import unittest
+from datetime import date
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests" / "fixtures"
-QUALITY_MODULE = (
+SCRIPT = (
     ROOT
     / "skills"
     / "education-industry-observation"
     / "scripts"
     / "report_quality.py"
 )
+SPEC = importlib.util.spec_from_file_location("education_report_quality", SCRIPT)
+QUALITY = importlib.util.module_from_spec(SPEC)
+assert SPEC.loader
+SPEC.loader.exec_module(QUALITY)
 
 
-def load_quality_module():
-    spec = importlib.util.spec_from_file_location("education_report_quality", QUALITY_MODULE)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-def load_fixture(name):
-    return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
-
-
-def add_broad_coverage(report):
-    report["coverage_mode"] = "broad_and_deep"
-    dates = ["2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-27"]
-    sections = [
-        ("行业速览-学校与高教", 2),
-        ("行业速览-国际教育", 1),
-        ("行业速览-AI产品", 2),
-    ]
-    number = 0
-    for section_name, count in sections:
-        items = []
-        for _ in range(count):
-            number += 1
-            event_date = dates[number - 1]
-            url = f"https://www.moe.gov.cn/test/b{number}.html"
-            items.append(
-                {
-                    "id": f"B{number}",
-                    "content_role": "brief",
-                    "headline": f"测试教育主体发布第{number}项本期教育产品动态",
-                    "short_title": f"速览动态{number}",
-                    "event_date": event_date,
-                    "subject": f"测试教育主体{number}",
-                    "event_type": "产品",
-                    "period_trigger": {
-                        "type": "product_launched",
-                        "description": f"测试教育主体于{event_date}正式发布第{number}项教育产品",
-                        "source_url": url,
-                    },
-                    "facts": [
-                        f"该主体于{event_date}正式发布教育产品。",
-                        "产品覆盖课堂教学与学习反馈两个场景。",
-                    ],
-                    "why_it_matters": "该事项补充了本期学校与教育产品供给的覆盖宽度，并提供可核验的落地动作。",
-                    "sources": [
-                        {
-                            "name": f"测试直接来源{number}",
-                            "url": url,
-                            "published_at": event_date,
-                            "source_type": "government",
-                            "is_primary": True,
-                            "access_status": "verified",
-                            "access_checked_at": "2026-07-05",
-                        }
-                    ],
-                }
-            )
-        report["sections"].append({"name": section_name, "items": items})
-    return report
+def load_report():
+    return json.loads((FIXTURES / "education_valid.json").read_text(encoding="utf-8"))
 
 
 class EducationReportQualityTests(unittest.TestCase):
-    def test_rejects_0709_news_digest(self):
-        quality = load_quality_module()
-        report = load_fixture("education_0709_failed.json")
+    def test_accepts_fixed_eight_page_template_contract(self):
+        result = QUALITY.validate_report(load_report())
 
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
+        self.assertEqual("colleague-biweekly-v1", result["template_id"])
+        self.assertEqual(8, result["page_count"])
+        self.assertEqual(11, result["item_count"])
+        self.assertEqual(34, result["quality_total"])
 
-        message = str(caught.exception)
-        for expected in (
-            "core_insights",
-            "weekly_judgment",
-            "analysis",
-            "tracking",
-            "scores",
-            "检索结论",
-        ):
-            self.assertIn(expected, message)
-
-    def test_accepts_research_report(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-
-        result = quality.validate_report(report)
-
-        self.assertEqual(5, result["event_count"])
-        self.assertGreaterEqual(result["minimum_score"], 16)
-
-    def test_accepts_broad_and_deep_report(self):
-        quality = load_quality_module()
-        report = add_broad_coverage(load_fixture("education_valid.json"))
-
-        result = quality.validate_report(report)
-
-        self.assertEqual(5, result["event_count"])
-        self.assertEqual(5, result["brief_count"])
-        self.assertEqual(10, result["coverage_count"])
-        self.assertIn("B1", quality.build_sources_markdown(report))
-
-    def test_rejects_broad_mode_without_enough_briefs(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
+    def test_rejects_legacy_coverage_mode(self):
+        report = load_report()
         report["coverage_mode"] = "broad_and_deep"
 
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
+        with self.assertRaises(QUALITY.ReportQualityError) as caught:
+            QUALITY.validate_report(report)
 
-        self.assertIn("至少需要 5 个", str(caught.exception))
+        self.assertIn("旧的 broad_and_deep/deep_only 模式已停用", str(caught.exception))
 
-    def test_rejects_brief_without_why_it_matters(self):
-        quality = load_quality_module()
-        report = add_broad_coverage(load_fixture("education_valid.json"))
-        report["sections"][-1]["items"][0]["why_it_matters"] = ""
+    def test_requires_exact_section_order_and_counts(self):
+        report = load_report()
+        report["sections"][0], report["sections"][1] = report["sections"][1], report["sections"][0]
+        report["sections"][2]["items"].pop()
 
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
-
-        self.assertIn("why_it_matters", str(caught.exception))
-
-    def test_rejects_low_value_event(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        report["sections"][0]["items"][0]["scores"] = {
-            "industry_impact": 2,
-            "policy_importance": 1,
-            "commercial_value": 2,
-            "technology_relevance": 2,
-            "investment_relevance": 1,
-        }
-
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
-
-        self.assertIn("未达到入选阈值", str(caught.exception))
-
-    def test_rejects_internal_content_role(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        report["sections"][0]["name"] = "搜索情况"
-        report["sections"][0]["items"][0]["content_role"] = "search_ledger"
-
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
-
-        self.assertIn("content_role", str(caught.exception))
-
-    def test_rejects_internal_marker_inside_body(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        report["sections"][0]["items"][0]["facts"][0] = "未检索到更多材料，这是检索结论。"
-
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
-
-        self.assertIn("内部工作内容", str(caught.exception))
-
-    def test_rejects_internal_markers_in_top_level_visible_content(self):
-        quality = load_quality_module()
-        mutations = (
-            ("title", lambda report: report.__setitem__("title", "未检索到事项的教育行业观察")),
-            (
-                "core_insights",
-                lambda report: report["core_insights"][0].__setitem__("claim", "本期检索结论尚无重要变化"),
-            ),
-            (
-                "weekly_judgment",
-                lambda report: report.__setitem__("weekly_judgment", "未检索到更多事项，这是检索结论。" * 8),
-            ),
-            (
-                "quality_review",
-                lambda report: report["quality_review"]["information_quality"].__setitem__(
-                    "reason", "未检索到更多来源，这是检索结论。"
-                ),
-            ),
-        )
-
-        for label, mutate in mutations:
-            with self.subTest(label=label):
-                report = load_fixture("education_valid.json")
-                mutate(report)
-                with self.assertRaises(quality.ReportQualityError) as caught:
-                    quality.validate_report(report)
-                self.assertIn("内部工作内容", str(caught.exception))
-
-    def test_rejects_follow_up_language_in_public_output_fields(self):
-        quality = load_quality_module()
-        mutations = (
-            (
-                "weekly_judgment",
-                lambda report: report.__setitem__(
-                    "weekly_judgment",
-                    "本期教育行业已形成多项公开进展，政策、融资和学校服务均有新增动作。"
-                    "相关事项的行业影响已经在正文说明，下一期重点跟踪项目落地和经营数据。"
-                    "本页用于同步当前进展，不应包含投资部内部任务安排。"
-                    "公开材料应围绕已经发生并经过来源核验的事实展开，避免把研究分工和待办事项混入行业结论。",
-                ),
-            ),
-            (
-                "analysis",
-                lambda report: report["sections"][0]["items"][0].__setitem__(
-                    "analysis",
-                    "该事项改变了行业供给结构，但后续跟踪仍需由投资部内部安排，不应出现在公开正文。",
-                ),
-            ),
-        )
-
-        for label, mutate in mutations:
-            with self.subTest(label=label):
-                report = load_fixture("education_valid.json")
-                mutate(report)
-                with self.assertRaises(quality.ReportQualityError) as caught:
-                    quality.validate_report(report)
-                self.assertIn("公开报告", str(caught.exception))
-
-    def test_rejects_event_outside_report_period(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        report["sections"][0]["items"][0]["event_date"] = "2026-05-01"
-
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
-
-        self.assertIn("不在报告期", str(caught.exception))
-
-    def test_rejects_current_article_about_old_period_roundup(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        item = report["sections"][0]["items"][0]
-        item["event_type"] = "融资"
-        item["event_date"] = "2026-07-03"
-        item["period_trigger"] = {
-            "type": "media_roundup",
-            "description": "媒体于2026年7月3日盘点上半年融资事项",
-            "source_url": item["sources"][0]["url"],
-        }
-
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
-
-        self.assertIn("本期触发类型", str(caught.exception))
-
-    def test_financing_cannot_use_generic_data_release_as_period_trigger(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        item = report["sections"][0]["items"][0]
-        item["event_type"] = "融资"
-        item["period_trigger"]["type"] = "official_data_released"
-        item["period_trigger"]["description"] = "媒体发布上半年融资汇总数据"
-
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
-
-        self.assertIn("与 event_type 不匹配", str(caught.exception))
-
-    def test_period_trigger_source_must_match_verified_primary_source(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        item = report["sections"][0]["items"][0]
-        item["period_trigger"]["source_url"] = "https://news.example.org/roundup"
-
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
-
-        self.assertIn("触发来源", str(caught.exception))
-
-    def test_accepts_current_financing_announcement(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-
-        quality.validate_report(report)
-
-    def test_financing_requires_fixed_details(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        report["sections"][0]["items"][0].pop("financing_details")
-
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
-
-        self.assertIn("financing_details", str(caught.exception))
-
-    def test_financing_requires_explicit_undisclosed_fields(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        report["sections"][0]["items"][0]["financing_details"]["profit"] = ""
-
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
-
-        self.assertIn("financing_details.profit", str(caught.exception))
-
-    def test_policy_requires_source_scope_and_classified_clauses(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        item = report["sections"][1]["items"][0]
-        item["policy_details"]["scope_level"] = "区域"
-        item["policy_details"]["prohibited_rules"] = []
-        item["policy_details"]["restrictive_requirements"] = []
-        item["policy_details"]["supportive_measures"] = []
-
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
+        with self.assertRaises(QUALITY.ReportQualityError) as caught:
+            QUALITY.validate_report(report)
 
         message = str(caught.exception)
-        self.assertIn("全国性或地方性", message)
-        self.assertIn("政策核心条款", message)
+        self.assertIn("栏目名称和顺序", message)
+        self.assertIn("必须包含 5 项", message)
 
-    def test_business_cooperation_requires_fixed_details(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        item = report["sections"][2]["items"][0]
-        item["event_type"] = "业务合作"
+    def test_requires_exact_slot_order(self):
+        report = load_report()
+        report["sections"][0]["items"][0]["slot_id"] = "listed_2"
 
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
+        with self.assertRaises(QUALITY.ReportQualityError) as caught:
+            QUALITY.validate_report(report)
 
-        self.assertIn("cooperation_details", str(caught.exception))
+        self.assertIn("slot_id 必须是 listed_1", str(caught.exception))
 
-    def test_accepts_policy_effective_with_older_official_source(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        item = report["sections"][1]["items"][0]
-        item["event_type"] = "政策"
-        item["event_date"] = "2026-06-24"
-        item["period_trigger"] = {
-            "type": "policy_effective",
-            "description": "测试省教育厅发布的管理办法于2026年6月24日正式施行",
-            "source_url": item["sources"][0]["url"],
-        }
-        item["sources"][0]["published_at"] = "2026-05-20"
+    def test_period_must_be_complete_anchor_aligned_biweekly(self):
+        for invalid in (
+            "2026.07.06-2026.07.18",
+            "2026.07.07-2026.07.20",
+            "2026.07.13-2026.07.26",
+        ):
+            with self.subTest(period=invalid):
+                report = load_report()
+                report["period"] = invalid
+                with self.assertRaises(QUALITY.ReportQualityError):
+                    QUALITY.validate_report(report)
 
-        quality.validate_report(report)
+    def test_rejects_reference_carryover(self):
+        report = load_report()
+        report["sections"][0]["items"][0]["date_scope"] = "reference_carryover"
 
-    def test_rejects_unverified_source(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        report["sections"][0]["items"][0]["sources"][0]["access_status"] = "unchecked"
+        with self.assertRaises(QUALITY.ReportQualityError) as caught:
+            QUALITY.validate_report(report)
 
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
+        self.assertIn("date_scope 必须是 within_period", str(caught.exception))
 
-        self.assertIn("access_status", str(caught.exception))
+    def test_rejects_slot_over_capacity(self):
+        report = load_report()
+        report["sections"][0]["items"][0]["bullets"][0] = "测试事实" * 80
 
-    def test_financing_requires_primary_source(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        report["sections"][0]["items"][0]["sources"][0]["is_primary"] = False
+        with self.assertRaises(QUALITY.ReportQualityError) as caught:
+            QUALITY.validate_report(report)
 
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
+        self.assertIn("超过槽位 listed_1", str(caught.exception))
 
-        self.assertIn("一手来源", str(caught.exception))
+    def test_rejects_public_analysis_and_follow_up_labels(self):
+        for marker in ("行业判断：", "后续跟踪"):
+            with self.subTest(marker=marker):
+                report = load_report()
+                report["sections"][0]["items"][0]["bullets"][0] = (
+                    f"{marker}这是不应进入公开页面的内部表述，必须被自动门槛阻止。"
+                )
+                with self.assertRaises(QUALITY.ReportQualityError) as caught:
+                    QUALITY.validate_report(report)
+                self.assertIn("模板外或内部措辞", str(caught.exception))
 
-    def test_event_type_alias_cannot_bypass_primary_source(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        item = report["sections"][0]["items"][0]
-        item["event_type"] = "资本动态"
-        item["sources"][0]["is_primary"] = False
+    def test_rejects_event_outside_period(self):
+        report = load_report()
+        report["sections"][0]["items"][0]["event_date"] = "2026-06-30"
 
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
+        with self.assertRaises(QUALITY.ReportQualityError) as caught:
+            QUALITY.validate_report(report)
 
-        self.assertIn("一手来源", str(caught.exception))
-
-    def test_rejects_reserved_source_domain(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        report["sections"][0]["items"][0]["sources"][0]["url"] = "https://source.invalid/item"
-
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
-
-        self.assertIn("URL", str(caught.exception))
-
-    def test_rejects_access_check_before_publication(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        report["sections"][0]["items"][0]["sources"][0]["access_checked_at"] = "2020-01-01"
-
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
-
-        self.assertIn("不得早于发布日期", str(caught.exception))
-
-    def test_rejects_extra_score_field(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        report["sections"][0]["items"][0]["scores"]["total"] = 99
-
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
-
-        self.assertIn("额外字段", str(caught.exception))
-
-    def test_rejects_malformed_evidence_table(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        report["sections"][0]["items"][0]["evidence_table"] = "不是对象"
-
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
-
-        self.assertIn("evidence_table", str(caught.exception))
-
-    def test_rejects_evidence_table_beyond_stable_capacity(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        report["sections"][0]["items"][0]["evidence_table"] = {
-            "columns": ["机构", "结果"],
-            "rows": [[f"测试机构{index}", "合格"] for index in range(8)],
-        }
-
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
-
-        self.assertIn("最多允许 3 行", str(caught.exception))
-
-    def test_rejects_overlong_fact(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        report["sections"][0]["items"][0]["facts"][0] = "过长事实" * 50
-
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
-
-        self.assertIn("facts[1]", str(caught.exception))
-
-    def test_rejects_overlong_impact_lists(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        item = report["sections"][0]["items"][0]
-        item["beneficiaries"] = ["受益机制描述" * 5] * 3
-        item["risks"] = ["风险条件描述" * 5] * 3
-
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
-
-        self.assertIn("受益方和风险", str(caught.exception))
-
-    def test_requires_background(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        report["sections"][0]["items"][0].pop("background")
-
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
-
-        self.assertIn("background", str(caught.exception))
-
-    def test_rejects_quality_review_below_eight(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-        report["quality_review"]["analysis_depth"]["score"] = 7
-
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
-
-        self.assertIn("quality_review.analysis_depth", str(caught.exception))
+        self.assertIn("event_date 不在报告期内", str(caught.exception))
 
     def test_rejects_duplicate_source_document(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
+        report = load_report()
         first_source = report["sections"][0]["items"][0]["sources"][0]
-        report["sections"][0]["items"][1]["sources"][0] = copy.deepcopy(first_source)
+        second = report["sections"][0]["items"][1]
+        second["sources"][0] = copy.deepcopy(first_source)
+        second["period_trigger"]["source_url"] = first_source["url"]
 
-        with self.assertRaises(quality.ReportQualityError) as caught:
-            quality.validate_report(report)
+        with self.assertRaises(QUALITY.ReportQualityError) as caught:
+            QUALITY.validate_report(report)
 
-        self.assertIn("同一来源文件", str(caught.exception))
+        self.assertIn("使用同一来源文件", str(caught.exception))
 
-    def test_builds_sources_markdown(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
+    def test_builds_sources_and_quality_sidecars(self):
+        report = load_report()
+        sources = QUALITY.build_sources_markdown(report)
+        quality = QUALITY.build_quality_markdown(report)
 
-        markdown = quality.build_sources_markdown(report)
-
-        self.assertIn("# 教育行业观察来源清单", markdown)
-        self.assertIn("E1", markdown)
-        self.assertIn("https://www.cninfo.com.cn/new/disclosure/detail/e1", markdown)
-
-    def test_builds_quality_markdown(self):
-        quality = load_quality_module()
-        report = load_fixture("education_valid.json")
-
-        markdown = quality.build_quality_markdown(report)
-
-        self.assertIn("# 教育行业观察质量报告", markdown)
-        self.assertIn("总分：34/40", markdown)
+        self.assertIn("listed_1", sources)
+        self.assertIn("政策 5", quality)
+        self.assertIn("总分：34/40", quality)
+        self.assertNotIn("tracking", sources)
 
 
 if __name__ == "__main__":

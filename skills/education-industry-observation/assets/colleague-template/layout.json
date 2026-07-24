@@ -1,0 +1,64 @@
+{
+  "template_id": "colleague-biweekly-v1",
+  "reference": {
+    "file": "教育行业观察20260706-20260719.pdf",
+    "sha256": "D2A0A8323773FCDB76EA5D536ECBC342098C74BD1C1D527ECE9937828AA9947B",
+    "page_count": 8,
+    "page_size_pts": [720, 540]
+  },
+  "canvas_px": [960, 720],
+  "colors": {
+    "cover_green": "#7E9C4C",
+    "header_green": "#C3D4A7",
+    "label_green": "#B5CA92",
+    "line_green": "#7E9C4C",
+    "white": "#FFFFFF",
+    "black": "#000000"
+  },
+  "fonts": {
+    "cover_title": {"typeface": "SimSun", "font_size_pt": 33.33},
+    "cover_period": {"typeface": "Calibri Light", "font_size_pt": 33.33},
+    "header": {"typeface": "KaiTi", "font_size_pt": 36},
+    "label": {"typeface": "KaiTi", "font_size_pt": 18},
+    "body": {"typeface": "KaiTi", "font_size_pt": 16}
+  },
+  "cover": {
+    "image": {"left": 0, "top": 0, "width": 960, "height": 404},
+    "green_block": {"left": 0, "top": 404, "width": 960, "height": 316},
+    "title": {"left": 58, "top": 455, "width": 520, "height": 54},
+    "period": {"left": 58, "top": 545, "width": 620, "height": 54}
+  },
+  "content_chrome": {
+    "header": {"left": 46, "top": 13, "width": 868, "height": 73},
+    "header_text": {"left": 54, "top": 18, "width": 820, "height": 62},
+    "label_left": 43,
+    "label_width": 97,
+    "body_left": 154,
+    "body_width": 760,
+    "body_text_left_offset": 10,
+    "body_text_right_offset": 12,
+    "line_width": 1.2
+  },
+  "pages": [
+    {"page": 2, "header": "1 行业速览-上市公司", "slots": ["listed_1", "listed_2"]},
+    {"page": 3, "header": "1 行业速览-上市公司", "slots": ["listed_3"]},
+    {"page": 4, "header": "2 行业速览-其他", "slots": ["other_1"]},
+    {"page": 5, "header": "2 行业速览-其他", "slots": ["other_2"]},
+    {"page": 6, "header": "2 行业速览-其他", "slots": ["other_3"]},
+    {"page": 7, "header": "3 行业速览-政策", "slots": ["policy_1", "policy_2", "policy_3"]},
+    {"page": 8, "header": "3 行业速览-政策", "slots": ["policy_4", "policy_5"]}
+  ],
+  "slots": {
+    "listed_1": {"page": 2, "section": "行业速览-上市公司", "label": {"top": 102, "height": 193}, "body": {"top": 102, "height": 193}, "min_bullets": 2, "max_bullets": 2, "max_chars": 240},
+    "listed_2": {"page": 2, "section": "行业速览-上市公司", "label": {"top": 312, "height": 193}, "body": {"top": 312, "height": 193}, "min_bullets": 2, "max_bullets": 2, "max_chars": 220},
+    "listed_3": {"page": 3, "section": "行业速览-上市公司", "label": {"top": 102, "height": 555}, "body": {"top": 102, "height": 555}, "min_bullets": 3, "max_bullets": 4, "max_chars": 650},
+    "other_1": {"page": 4, "section": "行业速览-其他", "label": {"top": 102, "height": 348}, "body": {"top": 102, "height": 348}, "min_bullets": 2, "max_bullets": 3, "max_chars": 420},
+    "other_2": {"page": 5, "section": "行业速览-其他", "label": {"top": 102, "height": 425}, "body": {"top": 102, "height": 425}, "min_bullets": 3, "max_bullets": 4, "max_chars": 560},
+    "other_3": {"page": 6, "section": "行业速览-其他", "label": {"top": 102, "height": 606}, "body": {"top": 102, "height": 606}, "min_bullets": 3, "max_bullets": 4, "max_chars": 760},
+    "policy_1": {"page": 7, "section": "行业速览-政策", "label": {"top": 95, "height": 244}, "body": {"top": 95, "height": 244}, "min_bullets": 2, "max_bullets": 2, "max_chars": 260},
+    "policy_2": {"page": 7, "section": "行业速览-政策", "label": {"top": 347, "height": 167}, "body": {"top": 347, "height": 167}, "min_bullets": 1, "max_bullets": 2, "max_chars": 210},
+    "policy_3": {"page": 7, "section": "行业速览-政策", "label": {"top": 526, "height": 192}, "body": {"top": 526, "height": 192}, "min_bullets": 2, "max_bullets": 2, "max_chars": 220},
+    "policy_4": {"page": 8, "section": "行业速览-政策", "label": {"top": 102, "height": 219}, "body": {"top": 128, "height": 193}, "min_bullets": 2, "max_bullets": 2, "max_chars": 330},
+    "policy_5": {"page": 8, "section": "行业速览-政策", "label": {"top": 360, "height": 346}, "body": {"top": 360, "height": 346}, "min_bullets": 2, "max_bullets": 3, "max_chars": 500}
+  }
+}
