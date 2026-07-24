@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the fixed 8-page education-industry biweekly report contract."""
+"""Validate the flexible colleague-template education biweekly report contract."""
 
 from __future__ import annotations
 
@@ -7,17 +7,17 @@ import argparse
 import json
 import re
 from collections import Counter
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 
 TEMPLATE_ID = "colleague-biweekly-v1"
 ANCHOR_START = date(2026, 7, 6)
-SECTION_SLOTS = (
-    ("行业速览-上市公司", ("listed_1", "listed_2", "listed_3")),
-    ("行业速览-其他", ("other_1", "other_2", "other_3")),
-    ("行业速览-政策", ("policy_1", "policy_2", "policy_3", "policy_4", "policy_5")),
+SECTION_RULES = (
+    ("行业速览-上市公司", "listed", "1 行业速览-上市公司"),
+    ("行业速览-其他", "other", "2 行业速览-其他"),
+    ("行业速览-政策", "policy", "3 行业速览-政策"),
 )
 QUALITY_DIMENSIONS = (
     "information_quality",
@@ -70,7 +70,7 @@ DEFAULT_LAYOUT = SCRIPT_DIR.parent / "assets" / "colleague-template" / "layout.j
 
 
 class ReportQualityError(ValueError):
-    """Raised when a report cannot be published in the fixed template."""
+    """Raised when a report cannot be published in the colleague template."""
 
     def __init__(self, issues):
         self.issues = list(issues)
@@ -173,19 +173,12 @@ def iter_items(report):
             yield section.get("name", ""), item
 
 
-def _validate_source(
-    issues,
-    item_id,
-    source,
-    source_number,
-    period,
-    source_documents,
-):
+def _validate_source(issues, item_id, source, source_number, period, source_documents):
     label = f"事项 {item_id} 的 sources[{source_number}]"
     if not isinstance(source, dict):
         issues.append(f"{label} 必须是对象")
         return None
-    _check_text(issues, f"{label}.name", source.get("name"), 2, 60)
+    _check_text(issues, f"{label}.name", source.get("name"), 2, 80)
     _check_text(issues, f"{label}.source_type", source.get("source_type"), 2, 30)
     url = source.get("url", "")
     if not _valid_url(url):
@@ -211,20 +204,127 @@ def _validate_source(
             issues.append(f"事项 {item_id} 与事项 {previous} 使用同一来源文件")
         else:
             source_documents[key] = item_id
-    within_period = bool(
-        published_at and period and period[0] <= published_at <= period[1]
+    timely_source = bool(
+        published_at
+        and period
+        and period[0] <= published_at <= period[1] + timedelta(days=7)
     )
     return {
         "url": url,
         "verified_primary": bool(
             source.get("access_status") == "verified" and source.get("is_primary")
         ),
-        "within_period": within_period,
+        "timely_source": timely_source,
     }
 
 
+def _collect_structure(report, issues):
+    sections = report.get("sections")
+    if not isinstance(sections, list):
+        issues.append("sections 必须是列表")
+        sections = []
+    expected_names = [name for name, _prefix, _header in SECTION_RULES]
+    actual_names = [section.get("name") for section in sections if isinstance(section, dict)]
+    if actual_names != expected_names:
+        issues.append(f"栏目名称和顺序必须是：{'、'.join(expected_names)}")
+    if len(sections) != len(SECTION_RULES):
+        issues.append("模板必须包含 3 个栏目；无合格事项的栏目保留空 items")
+
+    entries = []
+    expected_by_section = {}
+    ids = []
+    for section_index, (name, prefix, _header) in enumerate(SECTION_RULES):
+        section = sections[section_index] if section_index < len(sections) else {}
+        if not isinstance(section, dict):
+            issues.append(f"第 {section_index + 1} 个栏目必须是对象")
+            expected_by_section[name] = []
+            continue
+        items = section.get("items")
+        if not isinstance(items, list):
+            issues.append(f"栏目 {name} 的 items 必须是列表")
+            items = []
+        expected_slots = []
+        for item_index, item in enumerate(items, 1):
+            if not isinstance(item, dict):
+                issues.append(f"栏目 {name} 第 {item_index} 项必须是对象")
+                continue
+            expected_slot = f"{prefix}_{item_index}"
+            item_id = item.get("id") or f"{name}第{item_index}项"
+            if item.get("slot_id") != expected_slot:
+                issues.append(f"事项 {item_id} 的 slot_id 必须是 {expected_slot}")
+            expected_slots.append(expected_slot)
+            ids.append(item.get("id"))
+            entries.append((name, item, expected_slot))
+        expected_by_section[name] = expected_slots
+
+    clean_ids = [value for value in ids if _is_text(value)]
+    if len(entries) < 5:
+        issues.append("正式双周报至少需要 5 个合格事项；不足时交付缺口说明")
+    if len(clean_ids) != len(entries) or len(clean_ids) != len(set(clean_ids)):
+        issues.append("所有事项必须具有唯一 id")
+    return entries, expected_by_section, clean_ids
+
+
+def _validate_page_plan(report, layout, expected_by_section, issues):
+    pagination = layout.get("pagination") or {}
+    max_pages = int(pagination.get("max_pages", 15))
+    max_items = int(pagination.get("max_items_per_page", 3))
+    capacities = pagination.get("capacities") or {}
+    page_plan = report.get("page_plan")
+    if not isinstance(page_plan, list):
+        issues.append("page_plan 必须是列表")
+        page_plan = []
+    if not 1 <= len(page_plan) <= max_pages - 1:
+        issues.append(f"内容页必须为 1-{max_pages - 1} 页，含封面总页数不超过 {max_pages}")
+
+    rule_map = {
+        name: {"rank": index, "header": header}
+        for index, (name, _prefix, header) in enumerate(SECTION_RULES)
+    }
+    expected_flat = [
+        slot
+        for name, _prefix, _header in SECTION_RULES
+        for slot in expected_by_section.get(name, [])
+    ]
+    actual_flat = []
+    capacity_by_slot = {}
+    last_rank = -1
+    for page_index, page in enumerate(page_plan, 2):
+        if not isinstance(page, dict):
+            issues.append(f"page_plan 第 {page_index} 页必须是对象")
+            continue
+        section = page.get("section")
+        rule = rule_map.get(section)
+        if not rule:
+            issues.append(f"page_plan 第 {page_index} 页 section 无效")
+            continue
+        if rule["rank"] < last_rank:
+            issues.append("page_plan 的栏目页序必须保持上市公司、其他、政策")
+        last_rank = rule["rank"]
+        if page.get("header") != rule["header"]:
+            issues.append(f"page_plan 第 {page_index} 页标题必须是“{rule['header']}”")
+        slot_ids = page.get("slot_ids")
+        if not isinstance(slot_ids, list) or not 1 <= len(slot_ids) <= max_items:
+            issues.append(f"page_plan 第 {page_index} 页必须包含 1-{max_items} 个 slot_id")
+            continue
+        capacity = capacities.get(str(len(slot_ids)))
+        if not isinstance(capacity, dict):
+            issues.append(f"模板缺少每页 {len(slot_ids)} 项的容量配置")
+            continue
+        for slot_id in slot_ids:
+            if slot_id not in expected_by_section.get(section, []):
+                issues.append(f"page_plan 第 {page_index} 页的 {slot_id} 不属于栏目 {section}")
+            if slot_id in capacity_by_slot:
+                issues.append(f"page_plan 重复安排槽位 {slot_id}")
+            capacity_by_slot[slot_id] = capacity
+            actual_flat.append(slot_id)
+    if actual_flat != expected_flat:
+        issues.append("page_plan 必须按栏目和事项顺序完整覆盖全部 slot_id")
+    return capacity_by_slot, len(page_plan) + 1
+
+
 def validate_report(report, layout=None):
-    """Validate a report and return a fixed-template quality summary."""
+    """Validate a report and return a flexible-template quality summary."""
 
     issues = []
     if not isinstance(report, dict):
@@ -234,9 +334,9 @@ def validate_report(report, layout=None):
     if report.get("template_id") != TEMPLATE_ID:
         issues.append(f"template_id 必须是 {TEMPLATE_ID}")
     if "coverage_mode" in report:
-        issues.append("固定模板不允许 coverage_mode；旧的 broad_and_deep/deep_only 模式已停用")
+        issues.append("同事版模板不允许 coverage_mode；旧的 broad_and_deep/deep_only 模式已停用")
     if "weekly_judgment" in report:
-        issues.append("固定模板不包含 weekly_judgment 或本期行业小结")
+        issues.append("公开模板不包含 weekly_judgment 或本期行业小结")
     if report.get("title") != "教育行业观察":
         issues.append("title 必须是“教育行业观察”")
 
@@ -252,168 +352,124 @@ def validate_report(report, layout=None):
         if (start - ANCHOR_START).days % 14 != 0:
             issues.append("报告期必须与 2026-07-06 起始的双周节奏对齐")
 
-    sections = report.get("sections")
-    if not isinstance(sections, list):
-        issues.append("sections 必须是列表")
-        sections = []
-    expected_names = [name for name, _slots in SECTION_SLOTS]
-    actual_names = [section.get("name") for section in sections if isinstance(section, dict)]
-    if actual_names != expected_names:
-        issues.append(f"栏目名称和顺序必须是：{'、'.join(expected_names)}")
-    if len(sections) != len(SECTION_SLOTS):
-        issues.append("固定模板必须包含 3 个栏目")
+    entries, expected_by_section, clean_ids = _collect_structure(report, issues)
+    capacity_by_slot, page_count = _validate_page_plan(
+        report, layout, expected_by_section, issues
+    )
 
-    ids = []
-    slot_ids = []
     source_documents = {}
-    item_by_id = {}
-    for section_index, (expected_section, expected_slots) in enumerate(SECTION_SLOTS):
-        section = sections[section_index] if section_index < len(sections) else {}
-        if not isinstance(section, dict):
-            issues.append(f"第 {section_index + 1} 个栏目必须是对象")
-            continue
-        items = section.get("items")
-        if not isinstance(items, list):
-            issues.append(f"栏目 {expected_section} 的 items 必须是列表")
-            items = []
-        if len(items) != len(expected_slots):
-            issues.append(f"栏目 {expected_section} 必须包含 {len(expected_slots)} 项")
+    for section_name, item, expected_slot in entries:
+        item_id = item.get("id") or expected_slot
+        _check_text(issues, f"事项 {item_id} 的 id", item.get("id"), 1, 20)
+        _check_text(issues, f"事项 {item_id} 的 headline", item.get("headline"), 8, 70)
+        _check_text(issues, f"事项 {item_id} 的 short_title", item.get("short_title"), 2, 24)
+        _check_text(issues, f"事项 {item_id} 的 subject", item.get("subject"), 2, 80)
+        _check_text(issues, f"事项 {item_id} 的 event_type", item.get("event_type"), 2, 30)
+        _check_text(issues, f"事项 {item_id} 的 analysis", item.get("analysis"), 20, 180)
+        _check_text(issues, f"事项 {item_id} 的 tracking", item.get("tracking"), 10, 120)
+        _check_visible_markers(
+            issues,
+            f"事项 {item_id} 的公开字段",
+            {
+                "headline": item.get("headline"),
+                "short_title": item.get("short_title"),
+                "bullets": item.get("bullets"),
+            },
+        )
 
-        for item_index, expected_slot in enumerate(expected_slots):
-            if item_index >= len(items):
-                continue
-            item = items[item_index]
-            if not isinstance(item, dict):
-                issues.append(f"栏目 {expected_section} 第 {item_index + 1} 项必须是对象")
-                continue
-            item_id = item.get("id") or f"{expected_section}第{item_index + 1}项"
-            ids.append(item.get("id"))
-            slot_ids.append(item.get("slot_id"))
-            item_by_id[item.get("id")] = item
+        event_date = _parse_iso_date(item.get("event_date"))
+        if not event_date:
+            issues.append(f"事项 {item_id} 的 event_date 必须是 YYYY-MM-DD")
+        elif period and not period[0] <= event_date <= period[1]:
+            issues.append(f"事项 {item_id} 的 event_date 不在报告期内")
+        if item.get("date_scope") != "within_period":
+            issues.append(f"事项 {item_id} 的 date_scope 必须是 within_period")
 
-            if item.get("slot_id") != expected_slot:
-                issues.append(f"事项 {item_id} 的 slot_id 必须是 {expected_slot}")
-            slot = (layout.get("slots") or {}).get(expected_slot)
-            if not isinstance(slot, dict):
-                issues.append(f"模板缺少槽位 {expected_slot}")
-                continue
-            if slot.get("section") != expected_section:
-                issues.append(f"模板槽位 {expected_slot} 的栏目配置错误")
-
-            _check_text(issues, f"事项 {item_id} 的 id", item.get("id"), 1, 20)
-            _check_text(issues, f"事项 {item_id} 的 headline", item.get("headline"), 8, 70)
-            _check_text(issues, f"事项 {item_id} 的 short_title", item.get("short_title"), 2, 24)
-            _check_text(issues, f"事项 {item_id} 的 subject", item.get("subject"), 2, 80)
-            _check_text(issues, f"事项 {item_id} 的 event_type", item.get("event_type"), 2, 30)
-            _check_text(issues, f"事项 {item_id} 的 analysis", item.get("analysis"), 20, 160)
-            _check_text(issues, f"事项 {item_id} 的 tracking", item.get("tracking"), 10, 100)
-            _check_visible_markers(
-                issues,
-                f"事项 {item_id} 的公开字段",
-                {
-                    "headline": item.get("headline"),
-                    "short_title": item.get("short_title"),
-                    "bullets": item.get("bullets"),
-                },
+        capacity = capacity_by_slot.get(expected_slot) or {
+            "min_bullets": 1,
+            "max_bullets": 4,
+            "max_chars_per_item": 760,
+        }
+        bullets = item.get("bullets")
+        minimum = int(capacity["min_bullets"])
+        maximum = int(capacity["max_bullets"])
+        if not isinstance(bullets, list) or not minimum <= len(bullets) <= maximum:
+            issues.append(
+                f"事项 {item_id} 所在页面的 bullets 必须包含 {minimum}-{maximum} 项"
             )
-
-            event_date = _parse_iso_date(item.get("event_date"))
-            if not event_date:
-                issues.append(f"事项 {item_id} 的 event_date 必须是 YYYY-MM-DD")
-            elif period and not period[0] <= event_date <= period[1]:
-                issues.append(f"事项 {item_id} 的 event_date 不在报告期内")
-            if item.get("date_scope") != "within_period":
-                issues.append(f"事项 {item_id} 的 date_scope 必须是 within_period")
-
-            bullets = item.get("bullets")
-            minimum = int(slot["min_bullets"])
-            maximum = int(slot["max_bullets"])
-            if not isinstance(bullets, list) or not minimum <= len(bullets) <= maximum:
-                issues.append(
-                    f"事项 {item_id} 的 bullets 必须包含 {minimum}-{maximum} 项"
-                )
-                bullets = []
-            for bullet_index, bullet in enumerate(bullets, 1):
-                _check_text(
-                    issues,
-                    f"事项 {item_id} 的 bullets[{bullet_index}]",
-                    bullet,
-                    12,
-                    260,
-                )
-            total_chars = sum(len(str(bullet).strip()) for bullet in bullets)
-            if total_chars > int(slot["max_chars"]):
-                issues.append(
-                    f"事项 {item_id} 的 bullets 总长度 {total_chars} 字，超过槽位 "
-                    f"{expected_slot} 的 {slot['max_chars']} 字上限"
-                )
-
-            trigger = item.get("period_trigger")
-            if not isinstance(trigger, dict):
-                issues.append(f"事项 {item_id} 必须包含 period_trigger")
-                trigger = {}
-            trigger_type = trigger.get("type")
-            if trigger_type not in TRIGGER_TYPES:
-                issues.append(f"事项 {item_id} 的 period_trigger.type 无效")
-            description = trigger.get("description")
+            bullets = []
+        for bullet_index, bullet in enumerate(bullets, 1):
             _check_text(
                 issues,
-                f"事项 {item_id} 的 period_trigger.description",
-                description,
+                f"事项 {item_id} 的 bullets[{bullet_index}]",
+                bullet,
                 12,
-                140,
+                260,
             )
-            if _is_text(description):
-                if any(marker in description for marker in RETROSPECTIVE_MARKERS):
-                    issues.append(f"事项 {item_id} 的本期触发不能是盘点或历史回顾")
-                if event_date and not _date_in_description(event_date, description):
-                    issues.append(f"事项 {item_id} 的本期触发必须写明 event_date")
-            trigger_url = trigger.get("source_url", "")
-            if not _valid_url(trigger_url):
-                issues.append(f"事项 {item_id} 的 period_trigger.source_url 无效")
-
-            sources = item.get("sources")
-            if not isinstance(sources, list) or not 1 <= len(sources) <= 2:
-                issues.append(f"事项 {item_id} 的 sources 必须包含 1-2 个来源")
-                sources = []
-            source_results = []
-            for source_number, source in enumerate(sources, 1):
-                result = _validate_source(
-                    issues,
-                    item_id,
-                    source,
-                    source_number,
-                    period,
-                    source_documents,
-                )
-                if result:
-                    source_results.append(result)
-            trigger_match = next(
-                (
-                    result
-                    for result in source_results
-                    if _valid_url(trigger_url)
-                    and _normalise_url(result["url"]) == _normalise_url(trigger_url)
-                ),
-                None,
+        total_chars = sum(len(str(bullet).strip()) for bullet in bullets)
+        max_chars = int(capacity["max_chars_per_item"])
+        if total_chars > max_chars:
+            issues.append(
+                f"事项 {item_id} 的 bullets 总长度 {total_chars} 字，超过当前分页的 "
+                f"{max_chars} 字上限"
             )
-            if not trigger_match or not trigger_match["verified_primary"]:
-                issues.append(f"事项 {item_id} 的触发来源必须是 sources 中已核验的一手来源")
-            if source_results and not any(result["verified_primary"] for result in source_results):
-                issues.append(f"事项 {item_id} 至少需要 1 个已核验的一手来源")
-            if (
-                source_results
-                and trigger_type != "policy_effective"
-                and not any(result["within_period"] for result in source_results)
-            ):
-                issues.append(f"事项 {item_id} 至少需要 1 个发布日期在报告期内的直接来源")
 
-    clean_ids = [value for value in ids if _is_text(value)]
-    if len(clean_ids) != 11 or len(clean_ids) != len(set(clean_ids)):
-        issues.append("固定模板必须包含 11 个唯一事项 id")
-    expected_slot_ids = [slot for _name, slots in SECTION_SLOTS for slot in slots]
-    if slot_ids != expected_slot_ids:
-        issues.append("11 个 slot_id 必须完整并按模板顺序排列")
+        trigger = item.get("period_trigger")
+        if not isinstance(trigger, dict):
+            issues.append(f"事项 {item_id} 必须包含 period_trigger")
+            trigger = {}
+        trigger_type = trigger.get("type")
+        if trigger_type not in TRIGGER_TYPES:
+            issues.append(f"事项 {item_id} 的 period_trigger.type 无效")
+        description = trigger.get("description")
+        _check_text(
+            issues,
+            f"事项 {item_id} 的 period_trigger.description",
+            description,
+            12,
+            140,
+        )
+        if _is_text(description):
+            if any(marker in description for marker in RETROSPECTIVE_MARKERS):
+                issues.append(f"事项 {item_id} 的本期触发不能是盘点或历史回顾")
+            if event_date and not _date_in_description(event_date, description):
+                issues.append(f"事项 {item_id} 的本期触发必须写明 event_date")
+        trigger_url = trigger.get("source_url", "")
+        if not _valid_url(trigger_url):
+            issues.append(f"事项 {item_id} 的 period_trigger.source_url 无效")
+
+        sources = item.get("sources")
+        if not isinstance(sources, list) or not 1 <= len(sources) <= 2:
+            issues.append(f"事项 {item_id} 的 sources 必须包含 1-2 个来源")
+            sources = []
+        source_results = []
+        for source_number, source in enumerate(sources, 1):
+            result = _validate_source(
+                issues, item_id, source, source_number, period, source_documents
+            )
+            if result:
+                source_results.append(result)
+        trigger_match = next(
+            (
+                result
+                for result in source_results
+                if _valid_url(trigger_url)
+                and _normalise_url(result["url"]) == _normalise_url(trigger_url)
+            ),
+            None,
+        )
+        if not trigger_match or not trigger_match["verified_primary"]:
+            issues.append(f"事项 {item_id} 的触发来源必须是 sources 中已核验的一手来源")
+        if source_results and not any(result["verified_primary"] for result in source_results):
+            issues.append(f"事项 {item_id} 至少需要 1 个已核验的一手来源")
+        if (
+            source_results
+            and trigger_type != "policy_effective"
+            and not any(result["timely_source"] for result in source_results)
+        ):
+            issues.append(
+                f"事项 {item_id} 至少需要 1 个在报告期内或结束后 7 日内发布的直接来源"
+            )
 
     insights = report.get("core_insights")
     if not isinstance(insights, list) or not 1 <= len(insights) <= 3:
@@ -467,8 +523,8 @@ def validate_report(report, layout=None):
     section_counts = Counter(section_name for section_name, _item in iter_items(report))
     return {
         "template_id": TEMPLATE_ID,
-        "page_count": 8,
-        "item_count": 11,
+        "page_count": page_count,
+        "item_count": len(entries),
         "section_counts": dict(section_counts),
         "quality_total": sum(quality_scores),
     }
@@ -512,12 +568,25 @@ def build_sources_markdown(report):
 def build_quality_markdown(report):
     review = report.get("quality_review") or {}
     total = sum((review.get(dimension) or {}).get("score", 0) for dimension in QUALITY_DIMENSIONS)
+    section_counts = {
+        name: len((section or {}).get("items") or [])
+        for name, section in zip(
+            [rule[0] for rule in SECTION_RULES], report.get("sections") or []
+        )
+    }
+    item_count = sum(section_counts.values())
+    page_count = len(report.get("page_plan") or []) + 1
     lines = [
         "# 教育行业观察质量报告",
         "",
         f"报告期：{report.get('period', '')}",
         f"模板：{report.get('template_id', '')}",
-        "页面：8 页；事项：11 项（上市公司 3、其他 3、政策 5）",
+        (
+            f"页面：{page_count} 页；事项：{item_count} 项"
+            f"（上市公司 {section_counts.get('行业速览-上市公司', 0)}、"
+            f"其他 {section_counts.get('行业速览-其他', 0)}、"
+            f"政策 {section_counts.get('行业速览-政策', 0)}）"
+        ),
         f"总分：{total}/40",
         "",
         "| 维度 | 得分 | 复核理由 |",
@@ -532,7 +601,7 @@ def build_quality_markdown(report):
     lines.extend(
         [
             "",
-            "结论：通过固定模板内容门槛；仍需完成 PowerPoint 原生 PDF 导出、模板一致性校验和逐页视觉复核。",
+            "结论：通过同事版内容与动态分页门槛；仍需完成 PowerPoint 原生 PDF 导出、模板一致性校验和逐页视觉复核。",
             "",
         ]
     )
@@ -540,7 +609,7 @@ def build_quality_markdown(report):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="校验固定同事版教育行业双周报 JSON")
+    parser = argparse.ArgumentParser(description="校验同事版教育行业双周报 JSON")
     parser.add_argument("input_json", type=Path)
     parser.add_argument("--layout", type=Path, default=DEFAULT_LAYOUT)
     parser.add_argument("--sources-output", type=Path)

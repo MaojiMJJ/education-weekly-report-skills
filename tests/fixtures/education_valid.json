@@ -12,6 +12,43 @@
       "evidence_ids": ["P2", "P3", "P5"]
     }
   ],
+  "page_plan": [
+    {
+      "section": "行业速览-上市公司",
+      "header": "1 行业速览-上市公司",
+      "slot_ids": ["listed_1", "listed_2"]
+    },
+    {
+      "section": "行业速览-上市公司",
+      "header": "1 行业速览-上市公司",
+      "slot_ids": ["listed_3"]
+    },
+    {
+      "section": "行业速览-其他",
+      "header": "2 行业速览-其他",
+      "slot_ids": ["other_1"]
+    },
+    {
+      "section": "行业速览-其他",
+      "header": "2 行业速览-其他",
+      "slot_ids": ["other_2"]
+    },
+    {
+      "section": "行业速览-其他",
+      "header": "2 行业速览-其他",
+      "slot_ids": ["other_3"]
+    },
+    {
+      "section": "行业速览-政策",
+      "header": "3 行业速览-政策",
+      "slot_ids": ["policy_1", "policy_2", "policy_3"]
+    },
+    {
+      "section": "行业速览-政策",
+      "header": "3 行业速览-政策",
+      "slot_ids": ["policy_4", "policy_5"]
+    }
+  ],
   "sections": [
     {
       "name": "行业速览-上市公司",

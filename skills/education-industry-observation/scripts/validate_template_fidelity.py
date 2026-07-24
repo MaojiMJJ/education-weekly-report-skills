@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the exported PDF against the fixed colleague-template contract."""
+"""Validate the exported PDF against the flexible colleague-template contract."""
 
 from __future__ import annotations
 
@@ -114,10 +114,14 @@ def validate(report, layout, output_pdf, scratch_dir=None):
 def _validate_pdf(report, layout, output_pdf, pdfinfo, pdftotext, pdffonts):
     issues = []
     pages, size = _pdf_info(pdfinfo, output_pdf)
-    expected_pages = layout["reference"]["page_count"]
+    page_plan = report.get("page_plan") or []
+    expected_pages = len(page_plan) + 1
+    maximum_pages = int(layout["pagination"]["max_pages"])
     expected_size = tuple(float(value) for value in layout["reference"]["page_size_pts"])
     if pages != expected_pages:
         issues.append(f"成品页数 {pages}，应为 {expected_pages}")
+    if pages > maximum_pages:
+        issues.append(f"成品页数 {pages}，超过 {maximum_pages} 页上限")
     if any(abs(actual - expected) > 0.5 for actual, expected in zip(size, expected_size)):
         issues.append(f"成品页面尺寸 {size}，应为 {expected_size}")
 
@@ -135,14 +139,13 @@ def _validate_pdf(report, layout, output_pdf, pdfinfo, pdftotext, pdffonts):
         for item in section.get("items") or []
     }
     page_cache = {}
-    for page_spec in layout["pages"]:
-        page_number = page_spec["page"]
+    for page_number, page_spec in enumerate(page_plan, 2):
         text = _page_text(pdftotext, output_pdf, page_number)
         page_cache[page_number] = text
         compact = _compact(text)
         if _compact(page_spec["header"]) not in compact:
             issues.append(f"第 {page_number} 页缺少栏目标题：{page_spec['header']}")
-        for slot_id in page_spec["slots"]:
+        for slot_id in page_spec["slot_ids"]:
             item = items.get(slot_id)
             if not item:
                 issues.append(f"报告缺少槽位：{slot_id}")
@@ -161,7 +164,7 @@ def _validate_pdf(report, layout, output_pdf, pdfinfo, pdftotext, pdffonts):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="校验固定同事版教育双周报 PDF")
+    parser = argparse.ArgumentParser(description="校验同事版动态分页教育双周报 PDF")
     parser.add_argument("report_json", type=Path)
     parser.add_argument("output_pdf", type=Path)
     parser.add_argument(

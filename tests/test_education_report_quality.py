@@ -26,13 +26,36 @@ def load_report():
 
 
 class EducationReportQualityTests(unittest.TestCase):
-    def test_accepts_fixed_eight_page_template_contract(self):
+    def test_accepts_reference_eight_page_plan(self):
         result = QUALITY.validate_report(load_report())
 
         self.assertEqual("colleague-biweekly-v1", result["template_id"])
         self.assertEqual(8, result["page_count"])
         self.assertEqual(11, result["item_count"])
         self.assertEqual(34, result["quality_total"])
+
+    def test_accepts_dynamic_page_count_within_fifteen_pages(self):
+        report = load_report()
+        last_page = report["page_plan"].pop()
+        report["page_plan"].extend(
+            [
+                {
+                    "section": last_page["section"],
+                    "header": last_page["header"],
+                    "slot_ids": ["policy_4"],
+                },
+                {
+                    "section": last_page["section"],
+                    "header": last_page["header"],
+                    "slot_ids": ["policy_5"],
+                },
+            ]
+        )
+
+        result = QUALITY.validate_report(report)
+
+        self.assertEqual(9, result["page_count"])
+        self.assertEqual(11, result["item_count"])
 
     def test_rejects_legacy_coverage_mode(self):
         report = load_report()
@@ -43,7 +66,7 @@ class EducationReportQualityTests(unittest.TestCase):
 
         self.assertIn("旧的 broad_and_deep/deep_only 模式已停用", str(caught.exception))
 
-    def test_requires_exact_section_order_and_counts(self):
+    def test_requires_exact_section_order_and_complete_page_plan(self):
         report = load_report()
         report["sections"][0], report["sections"][1] = report["sections"][1], report["sections"][0]
         report["sections"][2]["items"].pop()
@@ -53,7 +76,7 @@ class EducationReportQualityTests(unittest.TestCase):
 
         message = str(caught.exception)
         self.assertIn("栏目名称和顺序", message)
-        self.assertIn("必须包含 5 项", message)
+        self.assertIn("page_plan", message)
 
     def test_requires_exact_slot_order(self):
         report = load_report()
@@ -92,7 +115,16 @@ class EducationReportQualityTests(unittest.TestCase):
         with self.assertRaises(QUALITY.ReportQualityError) as caught:
             QUALITY.validate_report(report)
 
-        self.assertIn("超过槽位 listed_1", str(caught.exception))
+        self.assertIn("超过当前分页", str(caught.exception))
+
+    def test_rejects_more_than_fifteen_pages(self):
+        report = load_report()
+        report["page_plan"] = report["page_plan"] * 3
+
+        with self.assertRaises(QUALITY.ReportQualityError) as caught:
+            QUALITY.validate_report(report)
+
+        self.assertIn("不超过 15", str(caught.exception))
 
     def test_rejects_public_analysis_and_follow_up_labels(self):
         for marker in ("行业判断：", "后续跟踪"):

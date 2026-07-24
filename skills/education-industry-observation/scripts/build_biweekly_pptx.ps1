@@ -51,7 +51,7 @@ foreach ($directory in @($outputDir, $sourcesDir, $qualityDir)) {
 
 & $PythonPath $validator $InputJson --layout $layout --sources-output $SourcesOutput --quality-output $QualityOutput
 if ($LASTEXITCODE -ne 0) {
-    throw "Report JSON failed the fixed-template quality gate."
+    throw "Report JSON failed the colleague-template quality gate."
 }
 
 $previousLocation = Get-Location
@@ -74,7 +74,7 @@ $qaDir = Join-Path $ScratchDir "qa"
 
 & $NodePath $builderRuntime --input $InputJson --layout $layout --cover $cover --output $Output --qa-dir $qaDir
 if ($LASTEXITCODE -ne 0) {
-    throw "Failed to build the fixed-template PPTX."
+    throw "Failed to build the colleague-template PPTX."
 }
 
 Write-Output "Written: $Output"

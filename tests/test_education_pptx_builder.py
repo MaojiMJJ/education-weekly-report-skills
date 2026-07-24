@@ -18,20 +18,22 @@ def slide_text(slide):
 
 
 class EducationPptxTemplateTests(unittest.TestCase):
-    def test_layout_manifest_matches_colleague_reference(self):
+    def test_layout_manifest_matches_colleague_visual_and_dynamic_pagination(self):
         layout = json.loads(LAYOUT.read_text(encoding="utf-8"))
 
         self.assertEqual("colleague-biweekly-v1", layout["template_id"])
         self.assertEqual([720, 540], layout["reference"]["page_size_pts"])
         self.assertEqual(8, layout["reference"]["page_count"])
         self.assertEqual([960, 720], layout["canvas_px"])
-        self.assertEqual(11, len(layout["slots"]))
+        self.assertEqual(15, layout["pagination"]["max_pages"])
+        self.assertEqual(3, layout["pagination"]["max_items_per_page"])
+        self.assertEqual(11, len(layout["reference_slots"]))
         self.assertEqual("#C3D4A7", layout["colors"]["header_green"])
         self.assertEqual("#B5CA92", layout["colors"]["label_green"])
         self.assertEqual("KaiTi", layout["fonts"]["body"]["typeface"])
         self.assertEqual(16, layout["fonts"]["body"]["font_size_pt"])
 
-    def test_template_asset_is_eight_page_four_by_three_deck(self):
+    def test_template_asset_is_eight_page_four_by_three_reference_deck(self):
         self.assertTrue(TEMPLATE.exists())
         presentation = Presentation(TEMPLATE)
 
@@ -39,7 +41,7 @@ class EducationPptxTemplateTests(unittest.TestCase):
         self.assertAlmostEqual(7.5, presentation.slide_height / 914400, places=2)
         self.assertEqual(8, len(presentation.slides))
 
-    def test_template_uses_exact_section_page_map(self):
+    def test_reference_template_uses_original_section_page_map(self):
         presentation = Presentation(TEMPLATE)
         expected = (
             "1 行业速览-上市公司",
@@ -118,6 +120,8 @@ class EducationPptxTemplateTests(unittest.TestCase):
 
         self.assertIn("@oai/artifact-tool", text)
         self.assertIn("PresentationFile.exportPptx", text)
+        self.assertIn("report.page_plan", text)
+        self.assertIn("layout.pagination.max_pages", text)
         self.assertNotIn("python-pptx", text.lower())
         self.assertNotIn("from pptx", text)
         self.assertIn("setup_artifact_tool_workspace.mjs", wrapper)

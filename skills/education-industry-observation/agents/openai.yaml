@@ -1,4 +1,4 @@
 interface:
   display_name: "教育行业观察双周报"
-  short_description: "按固定同事版模板生成最新教育行业双周报"
-  default_prompt: "Use $education-industry-observation 计算最近完整双周，核验上市公司3项、其他3项和政策5项，并按固定8页同事版模板生成《教育行业观察》PPT、PDF、来源清单和质量报告。"
+  short_description: "按同事版视觉生成15页以内教育行业双周报"
+  default_prompt: "Use $education-industry-observation 计算最近完整双周，核验当期上市公司、其他动态和政策事项，并按同事版视觉动态编排为15页以内的《教育行业观察》PPT、PDF、来源清单和质量报告。"

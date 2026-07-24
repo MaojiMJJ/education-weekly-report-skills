@@ -6,6 +6,19 @@
     "page_count": 8,
     "page_size_pts": [720, 540]
   },
+  "pagination": {
+    "min_pages": 2,
+    "max_pages": 15,
+    "max_items_per_page": 3,
+    "content_top": 102,
+    "content_bottom": 706,
+    "row_gap": 16,
+    "capacities": {
+      "1": {"min_bullets": 1, "max_bullets": 4, "max_chars_per_item": 760},
+      "2": {"min_bullets": 1, "max_bullets": 3, "max_chars_per_item": 340},
+      "3": {"min_bullets": 1, "max_bullets": 2, "max_chars_per_item": 220}
+    }
+  },
   "canvas_px": [960, 720],
   "colors": {
     "cover_green": "#7E9C4C",
@@ -39,16 +52,16 @@
     "body_text_right_offset": 12,
     "line_width": 1.2
   },
-  "pages": [
-    {"page": 2, "header": "1 行业速览-上市公司", "slots": ["listed_1", "listed_2"]},
-    {"page": 3, "header": "1 行业速览-上市公司", "slots": ["listed_3"]},
-    {"page": 4, "header": "2 行业速览-其他", "slots": ["other_1"]},
-    {"page": 5, "header": "2 行业速览-其他", "slots": ["other_2"]},
-    {"page": 6, "header": "2 行业速览-其他", "slots": ["other_3"]},
-    {"page": 7, "header": "3 行业速览-政策", "slots": ["policy_1", "policy_2", "policy_3"]},
-    {"page": 8, "header": "3 行业速览-政策", "slots": ["policy_4", "policy_5"]}
+  "reference_pages": [
+    {"page": 2, "section": "行业速览-上市公司", "header": "1 行业速览-上市公司", "slot_ids": ["listed_1", "listed_2"]},
+    {"page": 3, "section": "行业速览-上市公司", "header": "1 行业速览-上市公司", "slot_ids": ["listed_3"]},
+    {"page": 4, "section": "行业速览-其他", "header": "2 行业速览-其他", "slot_ids": ["other_1"]},
+    {"page": 5, "section": "行业速览-其他", "header": "2 行业速览-其他", "slot_ids": ["other_2"]},
+    {"page": 6, "section": "行业速览-其他", "header": "2 行业速览-其他", "slot_ids": ["other_3"]},
+    {"page": 7, "section": "行业速览-政策", "header": "3 行业速览-政策", "slot_ids": ["policy_1", "policy_2", "policy_3"]},
+    {"page": 8, "section": "行业速览-政策", "header": "3 行业速览-政策", "slot_ids": ["policy_4", "policy_5"]}
   ],
-  "slots": {
+  "reference_slots": {
     "listed_1": {"page": 2, "section": "行业速览-上市公司", "label": {"top": 102, "height": 193}, "body": {"top": 102, "height": 193}, "min_bullets": 2, "max_bullets": 2, "max_chars": 240},
     "listed_2": {"page": 2, "section": "行业速览-上市公司", "label": {"top": 312, "height": 193}, "body": {"top": 312, "height": 193}, "min_bullets": 2, "max_bullets": 2, "max_chars": 220},
     "listed_3": {"page": 3, "section": "行业速览-上市公司", "label": {"top": 102, "height": 555}, "body": {"top": 102, "height": 555}, "min_bullets": 3, "max_bullets": 4, "max_chars": 650},

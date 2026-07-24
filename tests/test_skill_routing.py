@@ -7,13 +7,14 @@ SKILL = ROOT / "skills" / "education-industry-observation"
 
 
 class SkillRoutingTests(unittest.TestCase):
-    def test_skill_declares_one_fixed_template(self):
+    def test_skill_declares_one_visual_template_with_dynamic_pagination(self):
         text = (SKILL / "SKILL.md").read_text(encoding="utf-8")
 
-        self.assertIn("本 Skill 只生成固定同事版双周报", text)
+        self.assertIn("本 Skill 只生成同事版视觉语言的双周报", text)
         self.assertIn("colleague-biweekly-v1", text)
-        self.assertIn("8 页、4:3", text)
-        self.assertIn("上市公司 3 项、其他 3 项、政策 5 项", text)
+        self.assertIn("最多 15 页", text)
+        self.assertIn("每个内容页放 1-3 项", text)
+        self.assertIn("不固定 11 个槽位", text)
 
     def test_legacy_modes_are_not_default_or_optional(self):
         text = (SKILL / "SKILL.md").read_text(encoding="utf-8")
@@ -33,11 +34,11 @@ class SkillRoutingTests(unittest.TestCase):
         self.assertIn("build_biweekly_pptx.ps1", text)
         self.assertIn("validate_template_fidelity.py", text)
 
-    def test_openai_metadata_matches_fixed_template(self):
+    def test_openai_metadata_matches_dynamic_colleague_template(self):
         text = (SKILL / "agents" / "openai.yaml").read_text(encoding="utf-8")
 
         self.assertIn("教育行业观察双周报", text)
-        self.assertIn("固定同事版模板", text)
+        self.assertIn("15页以内", text)
         self.assertIn("$education-industry-observation", text)
 
     def test_repository_readme_does_not_repeat_stale_public_structure(self):

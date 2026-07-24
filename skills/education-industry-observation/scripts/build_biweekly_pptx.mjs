@@ -106,10 +106,10 @@ function estimatedLineCount(text, charactersPerLine = 31.5) {
 }
 
 
-function addBulletRows(slide, slotId, bullets, bodyFrame, slot, layout) {
+function addBulletRows(slide, slotId, bullets, bodyFrame, layout) {
   const fontSize = layout.fonts.body.font_size_pt * (4 / 3);
   const lineHeight = fontSize * 1.2;
-  const gap = slot.body.height < 210 ? 5 : 10;
+  const gap = bodyFrame.height < 210 ? 5 : 10;
   const bulletLeft = bodyFrame.left + 11;
   const textLeft = bodyFrame.left + 39;
   const textWidth = bodyFrame.width - 51;
@@ -180,7 +180,7 @@ function placeholderReport(layout) {
     sections.push({
       name,
       items: slotIds.map((slotId) => {
-        const slot = layout.slots[slotId];
+        const slot = layout.reference_slots[slotId];
         const bullets = [];
         for (let index = 0; index < slot.min_bullets; index += 1) {
           bullets.push(`【本期事项要点 ${index + 1}：写明时间、主体、动作和关键事实。】`);
@@ -194,6 +194,11 @@ function placeholderReport(layout) {
     period: "20XX.XX.XX-20XX.XX.XX",
     template_id: layout.template_id,
     sections,
+    page_plan: layout.reference_pages.map((page) => ({
+      section: page.section,
+      header: page.header,
+      slot_ids: page.slot_ids,
+    })),
   };
 }
 
@@ -245,19 +250,34 @@ async function addCover(presentation, report, layout, coverPath) {
 }
 
 
-function addContentSlide(presentation, pageSpec, items, layout) {
+function rowFrames(itemCount, layout) {
+  const pagination = layout.pagination;
+  if (!Number.isInteger(itemCount) || itemCount < 1 || itemCount > pagination.max_items_per_page) {
+    throw new Error(`每页事项数必须为 1-${pagination.max_items_per_page}`);
+  }
+  const gap = itemCount === 1 ? 0 : pagination.row_gap;
+  const usable = pagination.content_bottom - pagination.content_top - gap * (itemCount - 1);
+  const height = usable / itemCount;
+  return Array.from({ length: itemCount }, (_value, index) => ({
+    top: pagination.content_top + index * (height + gap),
+    height,
+  }));
+}
+
+
+function addContentSlide(presentation, pageNumber, pageSpec, items, layout) {
   const slide = presentation.slides.add();
   slide.background.fill = layout.colors.white;
   const chrome = layout.content_chrome;
   addRect(
     slide,
-    `page-${pageSpec.page}-header`,
+    `page-${pageNumber}-header`,
     chrome.header,
     layout.colors.header_green,
   );
   addText(
     slide,
-    `page-${pageSpec.page}-header-text`,
+    `page-${pageNumber}-header-text`,
     chrome.header_text,
     pageSpec.header,
     {
@@ -269,23 +289,24 @@ function addContentSlide(presentation, pageSpec, items, layout) {
     },
   );
 
-  for (const slotId of pageSpec.slots) {
-    const slot = layout.slots[slotId];
+  const frames = rowFrames(pageSpec.slot_ids.length, layout);
+  for (const [index, slotId] of pageSpec.slot_ids.entries()) {
     const item = items.get(slotId);
     if (!item) {
       throw new Error(`报告缺少槽位：${slotId}`);
     }
+    const row = frames[index];
     const labelFrame = {
       left: chrome.label_left,
-      top: slot.label.top,
+      top: row.top,
       width: chrome.label_width,
-      height: slot.label.height,
+      height: row.height,
     };
     const bodyFrame = {
       left: chrome.body_left,
-      top: slot.body.top,
+      top: row.top,
       width: chrome.body_width,
-      height: slot.body.height,
+      height: row.height,
     };
     addRect(
       slide,
@@ -322,7 +343,7 @@ function addContentSlide(presentation, pageSpec, items, layout) {
       layout.colors.line_green,
       chrome.line_width,
     );
-    addBulletRows(slide, slotId, item.bullets, bodyFrame, slot, layout);
+    addBulletRows(slide, slotId, item.bullets, bodyFrame, layout);
   }
 }
 
@@ -345,8 +366,14 @@ async function build(args) {
   });
   await addCover(presentation, report, layout, args.cover);
   const items = flattenItems(report);
-  for (const pageSpec of layout.pages) {
-    addContentSlide(presentation, pageSpec, items, layout);
+  if (!Array.isArray(report.page_plan) || report.page_plan.length < 1) {
+    throw new Error("报告必须包含至少 1 个内容页的 page_plan");
+  }
+  if (report.page_plan.length + 1 > layout.pagination.max_pages) {
+    throw new Error(`报告总页数不得超过 ${layout.pagination.max_pages} 页`);
+  }
+  for (const [index, pageSpec] of report.page_plan.entries()) {
+    addContentSlide(presentation, index + 2, pageSpec, items, layout);
   }
   const output = path.resolve(args.output);
   await fs.mkdir(path.dirname(output), { recursive: true });
